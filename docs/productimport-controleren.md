@@ -12,6 +12,7 @@ Maak een JSON-bestand met een lijst van producten. Gebruik per product deze veld
     "vendor_id": "UUID-VAN-DE-AANBIEDER",
     "vendor_country_code": "NL",
     "vendor_verification_status": "verified",
+    "vendor_is_active": true,
     "name": "Exacte productnaam",
     "product_url": "https://voorbeeld.nl/pad-naar-dit-product",
     "source_reference": "https://voorbeeld.nl/bron-met-productgegevens",
@@ -35,15 +36,17 @@ Vervang de voorbeeldwaarden door gecontroleerde gegevens. Bovenstaande productna
 
 ## Controleregels
 
-- Aanbieder moet landcode `NL` en verificatiestatus `verified` hebben.
+- Aanbieder moet landcode `NL`, verificatiestatus `verified` en `vendor_is_active: true` hebben.
 - Productlink en bronverwijzing zijn verplichte, geldige http(s)-links.
 - Productnaam en aanbieder-ID zijn verplicht.
 - Prijs, gewicht en voedingswaarden moeten binnen redelijke grenzen vallen als ze zijn ingevuld.
 - Voedingswaarden zijn per 100 gram. Reken waarden per portie alleen om als portiegewicht én bronwaarden bekend zijn.
 - Onbekende waarden blijven `null`; vul ze niet op basis van aannames in.
+- De som van eiwit, koolhydraten en vet mag niet meer dan 100 gram per 100 gram zijn.
+- Een opvallende afwijking tussen kcal en een globale berekening uit macro's geeft een waarschuwing, geen automatische afkeuring. Vezels, afronding en andere energieleverende stoffen kunnen het verschil verklaren.
+- Een gedeeltelijk voedingsprofiel geeft een aandachtspunt; ontbrekende waarden mogen leeg blijven.
 - Beschikbaarheid is `available`, `unavailable` of `unknown`.
 - Dubbele productlinks voor dezelfde aanbieder in één bestand worden gemeld.
-- Deze controle vervangt geen controle op bestaande records in Supabase en bewijst niet dat de bron actueel is.
 
 ## Uitvoeren
 
