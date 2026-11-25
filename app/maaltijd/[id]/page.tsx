@@ -95,6 +95,11 @@ export default function MealDetailPage() {
               {meal.last_checked_at && <p className="checked-note">Productinformatie gecontroleerd: {new Date(meal.last_checked_at).toLocaleDateString("nl-NL")}</p>}
             </div>
             <div className="meal-detail-sections">
+              <section className="detail-panel completeness-panel">
+                <h2>Volledigheid productinformatie</h2>
+                <p><strong>{completeness} van 7 gegevens ingevuld</strong></p>
+                <p className="detail-muted">Dit geeft alleen aan hoeveel velden bekend zijn. Het is geen beoordeling van de maaltijd of de juistheid van de bron.</p>
+              </section>
               <section className="detail-panel">
                 <h2>Voedingswaarden</h2>
                 <p className="detail-muted">Per 100 gram</p>
