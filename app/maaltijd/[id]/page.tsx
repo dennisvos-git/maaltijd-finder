@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { isSupabaseConfigured, supabase } from "../../../lib/supabase";
 
+type PricePoint = { price: number; checked_at: string };
+
 type Meal = {
   id: string;
   name: string;
@@ -41,6 +43,7 @@ export default function MealDetailPage() {
   const [meal, setMeal] = useState<Meal | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [priceHistory, setPriceHistory] = useState<PricePoint[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,8 +60,19 @@ export default function MealDetailPage() {
         .maybeSingle();
       if (cancelled) return;
       if (queryError) setError("De maaltijdgegevens konden niet worden opgehaald.");
-      else setMeal(data as unknown as Meal | null);
-      setLoading(false);
+      else {
+        setMeal(data as unknown as Meal | null);
+        if (data) {
+          const { data: history } = await supabase
+            .from("price_history")
+            .select("price, checked_at")
+            .eq("product_id", params.id)
+            .order("checked_at", { ascending: false })
+            .limit(20);
+          if (!cancelled) setPriceHistory((history ?? []) as PricePoint[]);
+        }
+      }
+      if (!cancelled) setLoading(false);
     }
     void loadMeal();
     return () => { cancelled = true; };
@@ -122,6 +136,15 @@ export default function MealDetailPage() {
                   <div><dt>Vetten</dt><dd>{number(meal.fat_per_100g, "g")}<span>{number(perPortion(meal.fat_per_100g, meal.weight_grams), "g")}</span></dd></div>
                 </dl>
                 {meal.weight_grams == null && <p className="detail-muted">Een schatting per maaltijd is niet mogelijk omdat het gewicht ontbreekt.</p>}
+              </section>
+              <section className="detail-panel">
+                <h2>Prijsgeschiedenis</h2>
+                {priceHistory.length > 0 ? <>
+                  <p className="detail-muted">Geregistreerde meetpunten vanaf het moment dat prijsgeschiedenis is ingeschakeld. Dit is geen volledige historische prijsgarantie.</p>
+                  <ul className="price-history-list">
+                    {priceHistory.map((point, index) => <li key={`${point.checked_at}-${index}`}><span>{new Date(point.checked_at).toLocaleDateString("nl-NL")}</span><strong>{euro(point.price)}</strong></li>)}
+                  </ul>
+                </> : <p>Er is nog geen prijsgeschiedenis beschikbaar.</p>}
               </section>
               <section className="detail-panel">
                 <h2>Ingrediënten</h2>
