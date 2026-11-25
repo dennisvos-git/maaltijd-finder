@@ -26,7 +26,7 @@ type Meal = {
   vendors: { name: string; website_url: string | null; minimum_order_quantity: number | null; minimum_order_value: number | null; delivery_info: string | null } | { name: string; website_url: string | null; minimum_order_quantity: number | null; minimum_order_value: number | null; delivery_info: string | null }[] | null;
 };
 
-const euro = (value: number) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
+const dataFields = [\n  ["price", "prijs"], ["weight_grams", "gewicht"], ["kcal_per_100g", "energie"],\n  ["protein_per_100g", "eiwitten"], ["carbohydrates_per_100g", "koolhydraten"],\n  ["fat_per_100g", "vetten"], ["ingredients", "ingrediënten"],\n] as const;\n\nconst euro = (value: number) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
 const number = (value: number | null, suffix: string) => value == null ? "Niet opgegeven" : `${new Intl.NumberFormat("nl-NL", { maximumFractionDigits: 2 }).format(value)} ${suffix}`;
 const perPortion = (value: number | null, weightGrams: number | null) => value == null || weightGrams == null ? null : value * weightGrams / 100;
 
