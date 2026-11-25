@@ -86,13 +86,13 @@ export default function AdminOverviewPage() {
   return <>
     <header className="topbar"><div className="topbar-inner">
       <Link className="brand" href="/">Maaltijd <span>Finder</span></Link>
-      <nav className="nav-note site-nav"><Link href="/">Maaltijden</Link><Link href="/aanbieders">Aanbieders</Link></nav>
+      <nav className="nav-note site-nav"><Link href="/">Maaltijden</Link><Link href="/aanbieders">Aanbieders</Link><Link href="/beheer/import">Import / inloggen</Link></nav>
     </div></header>
     <main>
       <section className="hero">
         <div className="eyebrow">Beheer en kwaliteitscontrole</div>
         <h1>Cataloguscontrole</h1>
-        <p className="intro">Overzicht van productgegevens, aanbieders en controledatums. Dit scherm is bewust alleen-lezen; wijzigingen en imports zijn nog niet ingeschakeld.</p>
+        <p className="intro">Overzicht van productgegevens, aanbieders en controledatums. Dit overzicht is alleen-lezen. Voor beveiligde imports is een aparte beheerlogin beschikbaar.</p>
       </section>
       <section className="admin-stats">
         <article className="detail-panel"><span>Actieve maaltijden</span><strong>{loading ? "…" : products.length}</strong></article>
@@ -134,7 +134,7 @@ export default function AdminOverviewPage() {
         </table></div>
       </section>
       <section className="detail-panel admin-security-note">
-        <h2>Veilige vervolgstap</h2>
+        <h2>Beveiligd beheer</h2><p><Link href="/beheer/import">Open beheerlogin en productimport →</Link></p>
         <p>Producten en aanbieders kunnen hier nog niet worden aangepast. Eerst moet een afgeschermde beheerlogin met een expliciete beheerdersrol worden ingericht. De publieke website behoudt alleen-lezen rechten.</p>
       </section>
     </main>
