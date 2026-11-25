@@ -123,8 +123,13 @@ export default function Home() {
         return (b.protein_per_100g ?? -1) - (a.protein_per_100g ?? -1);
       }
       if (sort === "protein-per-euro") {
-        const aValue = a.price != null && a.price > 0 && a.protein_per_100g != null ? a.protein_per_100g / a.price : -1;
-        const bValue = b.price != null && b.price > 0 && b.protein_per_100g != null ? b.protein_per_100g / b.price : -1;
+        // Compare total protein in the complete package, not only the value per 100 g.
+        const aValue = a.price != null && a.price > 0 && a.weight_grams != null && a.protein_per_100g != null
+          ? (a.protein_per_100g * a.weight_grams / 100) / a.price
+          : -1;
+        const bValue = b.price != null && b.price > 0 && b.weight_grams != null && b.protein_per_100g != null
+          ? (b.protein_per_100g * b.weight_grams / 100) / b.price
+          : -1;
         return bValue - aValue;
       }
       return a.name.localeCompare(b.name, "nl");
@@ -202,7 +207,7 @@ export default function Home() {
                 <option value="price-per-kg">Laagste prijs per kilo</option>
                 <option value="kcal">Laagste kcal per 100 g</option>
                 <option value="protein">Meeste eiwit per 100 g</option>
-                <option value="protein-per-euro">Meeste eiwit per euro</option>
+                <option value="protein-per-euro">Meeste eiwit per euro (hele maaltijd)</option>
               </select>
             </label>
           </div>
