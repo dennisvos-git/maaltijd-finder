@@ -193,7 +193,8 @@ export default function Home() {
 
           {!loading && products.length > 0 && <p className="catalog-data-summary">{incompleteCount} van {products.length} maaltijden missen nog één of meer gegevens. Ontbrekende velden staan per maaltijd vermeld.</p>}
 
-          <div className="filters">
+          <div className="catalog-layout">
+            <aside className="filters" aria-label="Filters en sortering">
             <label className="search-field">
               <span>Zoeken</span>
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Zoek op maaltijd of aanbieder…" />
@@ -271,7 +272,8 @@ export default function Home() {
                 <option value="protein-per-euro">Meeste eiwit per euro (hele maaltijd)</option>
               </select>
             </label>
-          </div>
+            </aside>
+            <div className="catalog-results">
 
           {!isSupabaseConfigured && (
             <div className="empty-state">
@@ -350,6 +352,8 @@ export default function Home() {
               })}
             </div>
           )}
+            </div>
+          </div>
         </section>
       </main>
 
