@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "../../../lib/supabase";
 
 type ImportRow = Record<string, unknown> & {
   vendor_id: string; name: string; product_url: string; source_reference: string;
