@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useMemo, useState } from "react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 
@@ -103,7 +105,7 @@ export default function Home() {
     <>
       <header className="topbar">
         <div className="topbar-inner">
-          <a className="brand" href="/">Maaltijd <span>Finder</span></a>
+          <Link className="brand" href="/">Maaltijd <span>Finder</span></Link>
           <div className="nav-note">Eerlijk vergelijken. Slim kiezen.</div>
         </div>
       </header>
