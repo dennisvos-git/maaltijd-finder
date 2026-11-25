@@ -96,3 +96,8 @@ footer { max-width: 1180px; margin: auto; padding: 0 24px 32px; color: var(--mut
 .nutrition-list dd strong, .nutrition-list dd span { font-weight: 500; }
 .nutrition-list dd span { color: var(--muted, #667085); }
 @media (max-width: 600px) { .nutrition-list dd { grid-template-columns: 1fr; gap: 3px; } }
+
+
+/* Missing product data overview */
+.catalog-data-summary { margin: -8px 0 14px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.missing-data-note { margin: 0 0 10px; color: #8a5a16; font-size: 10px; line-height: 1.5; }
