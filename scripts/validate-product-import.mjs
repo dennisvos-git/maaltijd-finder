@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Validate product-import JSON before it is converted into a database seed.
- * Usage: node scripts/validate-product-import.mjs path/to/products.json
+ * Usage: node scripts/validate-product-import.mjs path/to/products.json [--against existing-products.json]
  * Self-test: node scripts/validate-product-import.mjs --self-test
  */
 import { readFile } from "node:fs/promises";
@@ -16,10 +16,20 @@ const numericFields = [
   ["fat_per_100g", 0, 100],
 ];
 
-function validate(rows) {
+function validate(rows, existingRows = []) {
   const errors = [];
   if (!Array.isArray(rows)) return ["Het JSON-bestand moet een lijst van producten bevatten."];
   const seen = new Set();
+  const existing = new Set();
+  if (!Array.isArray(existingRows)) {
+    errors.push("Het bestaande catalogusbestand moet een JSON-lijst zijn.");
+    return errors;
+  }
+  for (const row of existingRows) {
+    if (row && typeof row.vendor_id === "string" && typeof row.product_url === "string") {
+      existing.add(`${row.vendor_id.trim()}|${row.product_url.trim()}`.toLowerCase());
+    }
+  }
 
   rows.forEach((row, index) => {
     const prefix = `Product ${index + 1}`;
@@ -51,6 +61,7 @@ function validate(rows) {
     if (typeof row.vendor_id === "string" && typeof row.product_url === "string") {
       const key = `${row.vendor_id.trim()}|${row.product_url.trim()}`.toLowerCase();
       if (seen.has(key)) errors.push(`${prefix}: dubbele combinatie van aanbieder en productlink in dit bestand.`);
+      if (existing.has(key)) errors.push(`${prefix}: dit product staat met dezelfde aanbieder en link al in de bestaande catalogus.`);
       seen.add(key);
     }
     for (const [field, min, max] of numericFields) {
@@ -89,8 +100,9 @@ function selfTest() {
   const invalid = { ...valid, vendor_country_code: "BE", price: -2, product_url: "geen-link" };
   const validErrors = validate([valid]);
   const invalidErrors = validate([invalid]);
-  if (validErrors.length || invalidErrors.length < 3) {
-    console.error("Zelftest mislukt.", { validErrors, invalidErrors });
+  const duplicateErrors = validate([valid], [{ vendor_id: valid.vendor_id, product_url: valid.product_url }]);
+  if (validErrors.length || invalidErrors.length < 3 || !duplicateErrors.some((e) => e.includes("bestaande catalogus"))) {
+    console.error("Zelftest mislukt.", { validErrors, invalidErrors, duplicateErrors });
     process.exitCode = 1;
     return;
   }
@@ -98,22 +110,27 @@ function selfTest() {
 }
 
 async function main() {
-  const file = process.argv[2];
+  const args = process.argv.slice(2);
+  const file = args[0];
   if (file === "--self-test") return selfTest();
-  if (!file) {
-    console.error("Gebruik: node scripts/validate-product-import.mjs <bestand.json> of --self-test");
+  if (!file || file.startsWith("--")) {
+    console.error("Gebruik: node scripts/validate-product-import.mjs <bestand.json> [--against bestaand.json] of --self-test");
     process.exitCode = 2;
     return;
   }
   try {
     const rows = JSON.parse(await readFile(file, "utf8"));
-    const errors = validate(rows);
+    const againstIndex = args.indexOf("--against");
+    const existingRows = againstIndex >= 0
+      ? JSON.parse(await readFile(args[againstIndex + 1], "utf8"))
+      : [];
+    const errors = validate(rows, existingRows);
     if (errors.length) {
       console.error("Productimport afgekeurd:");
       for (const error of errors) console.error(`- ${error}`);
       process.exitCode = 1;
     } else {
-      console.log(`Controle geslaagd: ${rows.length} product(en) voldoen aan de basiscontroles.`);
+      console.log(`Controle geslaagd: ${rows.length} product(en) voldoen aan de basiscontroles${againstIndex >= 0 ? " en zijn vergeleken met de bestaande catalogus" : ""}.`);
     }
   } catch (error) {
     console.error(`Bestand kon niet worden gelezen als JSON: ${error.message}`);
