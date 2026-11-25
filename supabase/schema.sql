@@ -10,6 +10,20 @@ create table if not exists public.vendors (
   website_url text,
   logo_url text,
   delivery_info text,
+  -- Registry fields: only vendors verified to deliver in the Netherlands are published.
+  country_code text not null default 'NL',
+  delivery_verified_at timestamptz,
+  verification_status text not null default 'pending'
+    check (verification_status in ('pending', 'verified', 'rejected')),
+  source_type text not null default 'website'
+    check (source_type in ('website', 'csv', 'xml', 'api', 'manual')),
+  product_feed_url text,
+  scan_enabled boolean not null default false,
+  scan_frequency text not null default 'daily'
+    check (scan_frequency in ('daily', 'weekly', 'manual')),
+  last_scan_at timestamptz,
+  last_scan_status text,
+  admin_notes text,
   minimum_order_value numeric(10,2),
   minimum_order_quantity integer,
   is_active boolean not null default true,
