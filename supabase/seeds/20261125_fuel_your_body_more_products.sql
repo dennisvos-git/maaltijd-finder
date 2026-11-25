@@ -30,7 +30,7 @@ items as (
       9.49::numeric, 430,
       110::numeric, 8.7::numeric, 12.0::numeric, 2.8::numeric,
       'Vleesmaaltijd', 'Magnetron, pan, oven of steambox', 'Diepvriesmaaltijd',
-      'Runderreepjes (rundvlees, water, tapiocazetmeel, dextrose, zout, aroma (aminozuur), kruiden en specerijen (paprika, peper, witte peper), zuurteregelaar: natriumbicarbonaat, antioxidant: natriumcitraat), tagliatelle (water, durumtarwegriesmeel, zout), groenten (rode, groene en gele paprikablokjes, champignons), saus (room, melkeiwit, melkzuurbacteriën, zout, microbieel stremsel, tomaten, tomatenpuree, ui, water, wortelen, suiker, olijfolie, tarwebloem (gluten), zout, basilicum, kruiden, mosterdzaden, natuurazijn, gekaramelliseerde ui, gekaramelliseerde knoflook, zetmeel, zonnebloemolie, kruiden en specerijen, knoflookpoeder).',
+      NULL,
       'https://www.fuelyourbody.nl/tagliatelle-beef-stroganoff'
     )
   ) as t(name, product_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, meal_type, preparation_method, category, ingredients, source_reference)
