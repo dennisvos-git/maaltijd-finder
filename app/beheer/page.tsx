@@ -45,6 +45,8 @@ export default function AdminOverviewPage() {
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [view, setView] = useState("all");
+  const [vendorFilter, setVendorFilter] = useState("all");
+  const [sort, setSort] = useState("name");
 
   useEffect(() => {
     let cancelled = false;
@@ -80,8 +82,15 @@ export default function AdminOverviewPage() {
     const term = query.trim().toLocaleLowerCase("nl-NL");
     const matches = !term || [p.name, vendorName(p)].some(v => v.toLocaleLowerCase("nl-NL").includes(term));
     const missing = fields.some(([key]) => p[key] == null || p[key] === "");
-    return matches && (view === "all" || (view === "missing" && missing) || (view === "stale" && old(p.last_checked_at)));
-  }), [products, query, view]);
+    const productVendor = Array.isArray(p.vendors) ? p.vendors[0]?.name : p.vendors?.name;
+    const matchesVendor = vendorFilter === "all" || productVendor === vendorFilter;
+    return matches && matchesVendor && (view === "all" || (view === "missing" && missing) || (view === "stale" && old(p.last_checked_at)));
+  }).sort((a, b) => {
+    if (sort === "oldest") return (a.last_checked_at ? new Date(a.last_checked_at).getTime() : 0) - (b.last_checked_at ? new Date(b.last_checked_at).getTime() : 0);
+    if (sort === "price-low") return (a.price ?? Number.POSITIVE_INFINITY) - (b.price ?? Number.POSITIVE_INFINITY);
+    if (sort === "price-high") return (b.price ?? Number.NEGATIVE_INFINITY) - (a.price ?? Number.NEGATIVE_INFINITY);
+    return a.name.localeCompare(b.name, "nl-NL");
+  }), [products, query, view, vendorFilter, sort]);
 
   return <>
     <header className="topbar"><div className="topbar-inner">
@@ -106,6 +115,13 @@ export default function AdminOverviewPage() {
           <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Zoek maaltijd of aanbieder…" aria-label="Zoek maaltijd of aanbieder" />
           <select value={view} onChange={e => setView(e.target.value)} aria-label="Filter productgegevens">
             <option value="all">Alle maaltijden</option><option value="missing">Ontbrekende gegevens</option><option value="stale">Oude of onbekende controledatum</option>
+          </select>
+          <select value={vendorFilter} onChange={e => setVendorFilter(e.target.value)} aria-label="Filter op aanbieder">
+            <option value="all">Alle aanbieders</option>
+            {[...new Set(products.map(vendorName))].sort((a, b) => a.localeCompare(b, "nl-NL")).map(name => <option key={name} value={name}>{name}</option>)}
+          </select>
+          <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Sorteer producten">
+            <option value="name">Sorteer: naam</option><option value="oldest">Sorteer: oudste controle eerst</option><option value="price-low">Sorteer: laagste prijs</option><option value="price-high">Sorteer: hoogste prijs</option>
           </select>
         </div>
         {!isSupabaseConfigured && <div className="empty-state"><h2>Database niet ingesteld</h2></div>}
