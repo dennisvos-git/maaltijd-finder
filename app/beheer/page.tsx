@@ -135,7 +135,7 @@ export default function AdminOverviewPage() {
       </section>
       <section className="detail-panel admin-security-note">
         <h2>Beveiligd beheer</h2><p><Link href="/beheer/import">Open beheerlogin en productimport →</Link></p>
-        <p>Producten en aanbieders kunnen hier nog niet worden aangepast. Eerst moet een afgeschermde beheerlogin met een expliciete beheerdersrol worden ingericht. De publieke website behoudt alleen-lezen rechten.</p>
+        <p>Dit overzicht is alleen-lezen. Via de beheerlogin kun je als geregistreerde beheerder nieuwe producten importeren. Bestaande producten worden niet overschreven en verwijderen is uitgeschakeld. De publieke website behoudt alleen-lezen rechten.</p>
       </section>
     </main>
     <footer>Maaltijd Finder · Beheercontrole · Alleen-lezen</footer>
