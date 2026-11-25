@@ -1,0 +1,113 @@
+"use client";
+
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { isSupabaseConfigured, supabase } from "../../../lib/supabase";
+
+type Meal = {
+  id: string;
+  name: string;
+  product_url: string;
+  image_url: string | null;
+  price: number | null;
+  weight_grams: number | null;
+  kcal_per_100g: number | null;
+  protein_per_100g: number | null;
+  carbohydrates_per_100g: number | null;
+  fat_per_100g: number | null;
+  ingredients: string | null;
+  meal_type: string | null;
+  preparation_method: string | null;
+  category: string | null;
+  dietary_labels: string[];
+  availability: "available" | "unavailable" | "unknown";
+  last_checked_at: string | null;
+  vendors: { name: string; website_url: string | null; minimum_order_quantity: number | null; delivery_info: string | null } | { name: string; website_url: string | null; minimum_order_quantity: number | null; delivery_info: string | null }[] | null;
+};
+
+const euro = (value: number) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
+const number = (value: number | null, suffix: string) => value == null ? "Niet opgegeven" : `${new Intl.NumberFormat("nl-NL", { maximumFractionDigits: 2 }).format(value)} ${suffix}`;
+
+export default function MealDetailPage() {
+  const params = useParams<{ id: string }>();
+  const [meal, setMeal] = useState<Meal | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadMeal() {
+      if (!supabase) { setLoading(false); return; }
+      const { data, error: queryError } = await supabase
+        .from("products")
+        .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors(name, website_url, minimum_order_quantity, delivery_info)")
+        .eq("id", params.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (cancelled) return;
+      if (queryError) setError("De maaltijdgegevens konden niet worden opgehaald.");
+      else setMeal(data as unknown as Meal | null);
+      setLoading(false);
+    }
+    void loadMeal();
+    return () => { cancelled = true; };
+  }, [params.id]);
+
+  const vendor = meal ? (Array.isArray(meal.vendors) ? meal.vendors[0] ?? null : meal.vendors) : null;
+
+  return (
+    <>
+      <header className="topbar">
+        <div className="topbar-inner">
+          <Link className="brand" href="/">Maaltijd <span>Finder</span></Link>
+          <nav className="nav-note site-nav"><Link href="/">Maaltijden</Link><Link href="/aanbieders">Aanbieders</Link></nav>
+        </div>
+      </header>
+      <main>
+        <p className="breadcrumb"><Link href="/">← Terug naar alle maaltijden</Link></p>
+        {!isSupabaseConfigured && <div className="empty-state"><h2>Databaseverbinding ontbreekt</h2><p>De maaltijdgegevens kunnen niet worden geladen.</p></div>}
+        {isSupabaseConfigured && loading && <p className="loading-message">Maaltijd ophalen…</p>}
+        {isSupabaseConfigured && !loading && error && <div className="empty-state"><h2>Even geen verbinding</h2><p>{error}</p></div>}
+        {isSupabaseConfigured && !loading && !error && !meal && <div className="empty-state"><h2>Maaltijd niet gevonden</h2><p>Deze maaltijd bestaat niet meer of is niet beschikbaar.</p><Link className="product-link" href="/">Terug naar de catalogus</Link></div>}
+        {meal && (
+          <section className="meal-detail">
+            <div className="meal-detail-main">
+              <div className="meal-detail-image">{meal.image_url ? <img src={meal.image_url} alt={meal.name} /> : <span>Maaltijd</span>}</div>
+              <div className="product-tags">
+                {meal.meal_type && <span className="tag">{meal.meal_type}</span>}
+                {meal.preparation_method && <span className="tag muted-tag">{meal.preparation_method}</span>}
+              </div>
+              <h1 className="detail-title">{meal.name}</h1>
+              <p className="vendor-name">{vendor?.name ?? "Aanbieder onbekend"}</p>
+              <div className="detail-price">{meal.price == null ? "Prijs onbekend" : euro(meal.price)}{meal.weight_grams != null && <span>{meal.weight_grams} gram</span>}</div>
+              {meal.dietary_labels?.length > 0 && <div className="detail-labels">{meal.dietary_labels.map(label => <span className="tag" key={label}>{label}</span>)}</div>}
+              <a className="detail-cta" href={meal.product_url} target="_blank" rel="noreferrer">Bekijk bij aanbieder ↗</a>
+              {vendor?.minimum_order_quantity != null && <p className="delivery-note">Minimale bestelling bij deze aanbieder: {vendor.minimum_order_quantity} maaltijden</p>}
+              {vendor?.delivery_info && <p className="detail-delivery">{vendor.delivery_info}</p>}
+              {meal.last_checked_at && <p className="checked-note">Productinformatie gecontroleerd: {new Date(meal.last_checked_at).toLocaleDateString("nl-NL")}</p>}
+            </div>
+            <div className="meal-detail-sections">
+              <section className="detail-panel">
+                <h2>Voedingswaarden</h2>
+                <p className="detail-muted">Per 100 gram</p>
+                <dl className="nutrition-list">
+                  <div><dt>Energie</dt><dd>{number(meal.kcal_per_100g, "kcal")}</dd></div>
+                  <div><dt>Eiwitten</dt><dd>{number(meal.protein_per_100g, "g")}</dd></div>
+                  <div><dt>Koolhydraten</dt><dd>{number(meal.carbohydrates_per_100g, "g")}</dd></div>
+                  <div><dt>Vetten</dt><dd>{number(meal.fat_per_100g, "g")}</dd></div>
+                </dl>
+              </section>
+              <section className="detail-panel">
+                <h2>Ingrediënten</h2>
+                <p>{meal.ingredients || "Ingrediënten zijn voor deze maaltijd nog niet opgegeven."}</p>
+              </section>
+              <p className="detail-disclaimer">Gegevens worden overgenomen uit beschikbare productinformatie van de aanbieder. Controleer bij allergieën altijd de actuele verpakking of productpagina.</p>
+            </div>
+          </section>
+        )}
+      </main>
+      <footer>Maaltijd Finder · Vergelijk maaltijden en bekijk de actuele informatie bij de aanbieder.</footer>
+    </>
+  );
+}
