@@ -58,6 +58,8 @@ export default function MealDetailPage() {
   }, [params.id]);
 
   const vendor = meal ? (Array.isArray(meal.vendors) ? meal.vendors[0] ?? null : meal.vendors) : null;
+  const completeness = meal ? [meal.price, meal.weight_grams, meal.kcal_per_100g, meal.protein_per_100g, meal.carbohydrates_per_100g, meal.fat_per_100g, meal.ingredients]
+    .filter((value) => value !== null && value !== undefined && value !== "").length : 0;
 
   return (
     <>
