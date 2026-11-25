@@ -210,7 +210,7 @@ export default function Home() {
                         {product.meal_type && <span className="tag">{product.meal_type}</span>}
                         {product.preparation_method && <span className="tag muted-tag">{product.preparation_method}</span>}
                       </div>
-                      <h3>{product.name}</h3>
+                      <h3><Link href={`/maaltijd/${product.id}`}>{product.name}</Link></h3>
                       <p className="vendor-name">{vendor?.name ?? "Aanbieder onbekend"}</p>
                       <div className="product-facts">
                         {product.weight_grams && <span>{product.weight_grams} g</span>}
@@ -224,7 +224,7 @@ export default function Home() {
                           <strong>{product.price != null ? euro(product.price) : "Prijs onbekend"}</strong>
                           {pricePerKg != null && <small>{euro(pricePerKg)} / kg</small>}
                         </div>
-                        <a className="product-link" href={product.product_url} target="_blank" rel="noreferrer">Bekijk aanbieder ↗</a>
+                        <div className="product-card-links"><Link className="product-link" href={`/maaltijd/${product.id}`}>Details bekijken →</Link><a className="product-link" href={product.product_url} target="_blank" rel="noreferrer">Aanbieder ↗</a></div>
                       </div>
                       {vendor?.minimum_order_quantity != null && (
                         <p className="delivery-note">Minimale bestelling: {vendor.minimum_order_quantity} maaltijden</p>
