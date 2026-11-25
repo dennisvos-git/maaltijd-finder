@@ -104,6 +104,17 @@ export default function Home() {
         const bValue = b.price != null && b.weight_grams ? b.price / b.weight_grams : Number.MAX_VALUE;
         return aValue - bValue;
       }
+      if (sort === "kcal") {
+        return (a.kcal_per_100g ?? Number.MAX_VALUE) - (b.kcal_per_100g ?? Number.MAX_VALUE);
+      }
+      if (sort === "protein") {
+        return (b.protein_per_100g ?? -1) - (a.protein_per_100g ?? -1);
+      }
+      if (sort === "protein-per-euro") {
+        const aValue = a.price != null && a.price > 0 && a.protein_per_100g != null ? a.protein_per_100g / a.price : -1;
+        const bValue = b.price != null && b.price > 0 && b.protein_per_100g != null ? b.protein_per_100g / b.price : -1;
+        return bValue - aValue;
+      }
       return a.name.localeCompare(b.name, "nl");
     });
   }, [products, search, mealType, preparation, sort]);
@@ -161,6 +172,9 @@ export default function Home() {
                 <option value="name">Naam</option>
                 <option value="price">Laagste prijs</option>
                 <option value="price-per-kg">Laagste prijs per kilo</option>
+                <option value="kcal">Laagste kcal per 100 g</option>
+                <option value="protein">Meeste eiwit per 100 g</option>
+                <option value="protein-per-euro">Meeste eiwit per euro</option>
               </select>
             </label>
           </div>
