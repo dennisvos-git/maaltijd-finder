@@ -23,6 +23,7 @@ type Product = {
   protein_per_100g: number | null;
   carbohydrates_per_100g: number | null;
   fat_per_100g: number | null;
+  ingredients: string | null;
   meal_type: string | null;
   preparation_method: string | null;
   category: string | null;
@@ -66,7 +67,7 @@ export default function Home() {
 
       const { data, error: queryError } = await supabase
         .from("products")
-        .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors!inner(name, website_url, minimum_order_quantity, minimum_order_value, verification_status, country_code, is_active)")
+        .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors!inner(name, website_url, minimum_order_quantity, minimum_order_value, verification_status, country_code, is_active)")
         .eq("is_active", true)
         .eq("vendors.verification_status", "verified")
         .eq("vendors.country_code", "NL")
@@ -236,6 +237,8 @@ export default function Home() {
             <div className="product-grid">
               {visibleProducts.map((product) => {
                 const vendor = vendorFor(product);
+                const completeness = [product.price, product.weight_grams, product.kcal_per_100g, product.protein_per_100g, product.carbohydrates_per_100g, product.fat_per_100g, product.ingredients]
+                  .filter((value) => value !== null && value !== undefined && value !== "").length;
                 const pricePerKg = product.price != null && product.weight_grams
                   ? product.price / (product.weight_grams / 1000)
                   : null;
@@ -253,6 +256,7 @@ export default function Home() {
                       </div>
                       <h3><Link href={`/maaltijd/${product.id}`}>{product.name}</Link></h3>
                       <p className="vendor-name">{vendor?.name ?? "Aanbieder onbekend"}</p>
+                      <p className="completeness-note">Productinformatie: {completeness}/7 gegevens ingevuld</p>
                       <div className="product-facts">
                         {product.weight_grams && <span>{product.weight_grams} g</span>}
                         {product.kcal_per_100g != null && <span>{product.kcal_per_100g} kcal / 100 g</span>}
