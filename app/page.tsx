@@ -46,6 +46,8 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [mealType, setMealType] = useState("all");
   const [preparation, setPreparation] = useState("all");
+  const [dietaryLabel, setDietaryLabel] = useState("all");
+  const [availability, setAvailability] = useState("all");
   const [sort, setSort] = useState("name");
 
   useEffect(() => {
@@ -88,6 +90,10 @@ export default function Home() {
     () => [...new Set(products.map((p) => p.preparation_method).filter((v): v is string => Boolean(v)))].sort(),
     [products]
   );
+  const dietaryLabels = useMemo(
+    () => [...new Set(products.flatMap((p) => p.dietary_labels ?? []))].sort((a, b) => a.localeCompare(b, "nl")),
+    [products]
+  );
 
   const visibleProducts = useMemo(() => {
     const term = search.trim().toLocaleLowerCase("nl-NL");
@@ -97,7 +103,9 @@ export default function Home() {
         .some((value) => value?.toLocaleLowerCase("nl-NL").includes(term));
       return matchesSearch
         && (mealType === "all" || product.meal_type === mealType)
-        && (preparation === "all" || product.preparation_method === preparation);
+        && (preparation === "all" || product.preparation_method === preparation)
+        && (dietaryLabel === "all" || (product.dietary_labels ?? []).includes(dietaryLabel))
+        && (availability === "all" || product.availability === availability);
     });
 
     return filtered.sort((a, b) => {
@@ -120,7 +128,7 @@ export default function Home() {
       }
       return a.name.localeCompare(b.name, "nl");
     });
-  }, [products, search, mealType, preparation, sort]);
+  }, [products, search, mealType, preparation, dietaryLabel, availability, sort]);
 
   return (
     <>
@@ -167,6 +175,22 @@ export default function Home() {
               <select value={preparation} onChange={(event) => setPreparation(event.target.value)}>
                 <option value="all">Alle bereidingswijzen</option>
                 {preparations.map((method) => <option key={method} value={method}>{method}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Dieetkenmerk</span>
+              <select value={dietaryLabel} onChange={(event) => setDietaryLabel(event.target.value)}>
+                <option value="all">Alle kenmerken</option>
+                {dietaryLabels.map((label) => <option key={label} value={label}>{label}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Beschikbaarheid</span>
+              <select value={availability} onChange={(event) => setAvailability(event.target.value)}>
+                <option value="all">Alle statussen</option>
+                <option value="available">Beschikbaar</option>
+                <option value="unavailable">Niet beschikbaar</option>
+                <option value="unknown">Onbekend</option>
               </select>
             </label>
             <label>
