@@ -64,8 +64,11 @@ export default function Home() {
 
       const { data, error: queryError } = await supabase
         .from("products")
-        .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors(name, website_url, minimum_order_quantity, minimum_order_value)")
-        .eq("is_active", true);
+        .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors!inner(name, website_url, minimum_order_quantity, minimum_order_value, verification_status, country_code, is_active)")
+        .eq("is_active", true)
+        .eq("vendors.verification_status", "verified")
+        .eq("vendors.country_code", "NL")
+        .eq("vendors.is_active", true);
 
       if (cancelled) return;
       if (queryError) setError("De maaltijden konden niet worden opgehaald. Probeer het later opnieuw.");
