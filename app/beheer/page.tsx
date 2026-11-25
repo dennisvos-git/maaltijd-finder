@@ -84,7 +84,7 @@ export default function AdminOverviewPage() {
     const missing = fields.some(([key]) => p[key] == null || p[key] === "");
     const productVendor = Array.isArray(p.vendors) ? p.vendors[0]?.name : p.vendors?.name;
     const matchesVendor = vendorFilter === "all" || productVendor === vendorFilter;
-    return matches && matchesVendor && (view === "all" || (view === "missing" && missing) || (view === "stale" && old(p.last_checked_at)));
+    return matches && matchesVendor && (view === "all" || (view === "missing" && missing) || (view === "stale" && !!p.last_checked_at && old(p.last_checked_at)) || (view === "never" && !p.last_checked_at));
   }).sort((a, b) => {
     if (sort === "oldest") return (a.last_checked_at ? new Date(a.last_checked_at).getTime() : 0) - (b.last_checked_at ? new Date(b.last_checked_at).getTime() : 0);
     if (sort === "price-low") return (a.price ?? Number.POSITIVE_INFINITY) - (b.price ?? Number.POSITIVE_INFINITY);
@@ -114,7 +114,7 @@ export default function AdminOverviewPage() {
         <div className="admin-controls">
           <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Zoek maaltijd of aanbieder…" aria-label="Zoek maaltijd of aanbieder" />
           <select value={view} onChange={e => setView(e.target.value)} aria-label="Filter productgegevens">
-            <option value="all">Alle maaltijden</option><option value="missing">Ontbrekende gegevens</option><option value="stale">Oude of onbekende controledatum</option>
+            <option value="all">Alle maaltijden</option><option value="missing">Ontbrekende gegevens</option><option value="stale">Ouder dan 30 dagen</option><option value="never">Nooit gecontroleerd</option>
           </select>
           <select value={vendorFilter} onChange={e => setVendorFilter(e.target.value)} aria-label="Filter op aanbieder">
             <option value="all">Alle aanbieders</option>
@@ -136,7 +136,7 @@ export default function AdminOverviewPage() {
               <td><Link href={`/maaltijd/${p.id}`}>{p.name}</Link></td>
               <td>{vendorName(p)}</td><td>{euro(p.price)}</td>
               <td>{missing.length ? missing.join(", ") : "Compleet"}</td>
-              <td>{p.last_checked_at ? new Date(p.last_checked_at).toLocaleDateString("nl-NL") : "Nooit gecontroleerd"}{old(p.last_checked_at) && <span className="stale-label">Oud / onbekend</span>}</td>
+              <td>{p.last_checked_at ? new Date(p.last_checked_at).toLocaleDateString("nl-NL") : "Nooit gecontroleerd"}{p.last_checked_at && old(p.last_checked_at) && <span className="stale-label">Ouder dan 30 dagen</span>}{!p.last_checked_at && <span className="stale-label">Controle ontbreekt</span>}</td>
               <td><a href={p.product_url} target="_blank" rel="noreferrer">Productpagina ↗</a></td>
             </tr>;
           })}</tbody>
