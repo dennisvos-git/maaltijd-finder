@@ -65,6 +65,7 @@ export default function AdminImportPage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -93,6 +94,18 @@ export default function AdminImportPage() {
     setBusy(false);
     if (error) setMessage("Inloggen is niet gelukt. Controleer het e-mailadres en wachtwoord.");
     else setMessage("Inloggen gelukt. Beheerrechten worden gecontroleerd.");
+  }
+
+  async function requestPasswordReset() {
+    setBusy(true); setMessage(""); setErrors([]);
+    if (!supabase) { setMessage("Supabase is niet ingesteld."); setBusy(false); return; }
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteUrl}/beheer/wachtwoord-reset`,
+    });
+    setBusy(false);
+    if (error) setMessage("De resetmail kon niet worden verstuurd. Controleer de Supabase URL-instellingen.");
+    else setMessage("Als dit e-mailadres bekend is, ontvang je een e-mail met een link om je wachtwoord opnieuw in te stellen.");
   }
 
   async function logout() { await supabase?.auth.signOut(); setMessage("Je bent uitgelogd."); }
@@ -126,7 +139,7 @@ export default function AdminImportPage() {
     <header className="topbar"><div className="topbar-inner"><Link className="brand" href="/">Maaltijd <span>Finder</span></Link><nav className="nav-note site-nav"><Link href="/beheer">Controle</Link><Link href="/">Website</Link></nav></div></header>
     <main>
       <section className="hero"><div className="eyebrow">Beveiligd beheer</div><h1>Beheerlogin en import</h1><p className="intro">Alleen accounts die expliciet als beheerder zijn geregistreerd, kunnen producten importeren.</p></section>
-      {!sessionUser && <form className="admin-login detail-panel" onSubmit={login}><h2>Inloggen</h2><label>E-mailadres<input type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} /></label><label>Wachtwoord<input type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} /></label><button className="detail-cta" disabled={busy}>{busy ? "Bezig…" : "Inloggen"}</button></form>}
+      {!sessionUser && <form className="admin-login detail-panel" onSubmit={event => { event.preventDefault(); if (resetMode) void requestPasswordReset(); else void login(event); }}><h2>{resetMode ? "Wachtwoord herstellen" : "Inloggen"}</h2><label>E-mailadres<input type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} /></label>{!resetMode && <label>Wachtwoord<input type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} /></label>}<button className="detail-cta" disabled={busy}>{busy ? "Bezig…" : resetMode ? "Stuur herstellink" : "Inloggen"}</button><button type="button" className="admin-secondary" onClick={() => { setResetMode(!resetMode); setMessage(""); }}>{resetMode ? "Terug naar inloggen" : "Wachtwoord vergeten?"}</button></form>}
       {sessionUser && !isAdmin && <section className="detail-panel"><h2>Geen beheerrechten</h2><p>Je bent ingelogd, maar dit account staat niet in de beheerderslijst. Vraag de eigenaar om de juiste Auth-gebruikers-ID via Supabase SQL Editor toe te voegen.</p><button className="detail-cta" onClick={logout}>Uitloggen</button></section>}
       {sessionUser && isAdmin && <section className="detail-panel admin-import-panel"><div className="admin-import-heading"><div><h2>Productimport (JSON)</h2><p>Controleer eerst de aanbieder, bronlinks, verplichte velden, numerieke waarden en dubbele producten. Bestaande producten worden niet overschreven.</p></div><button type="button" className="admin-secondary" onClick={logout}>Uitloggen</button></div><label>Plak een JSON-lijst<textarea rows={16} spellCheck={false} value={json} onChange={e => setJson(e.target.value)} placeholder={'[\n  {\n    "vendor_id": "UUID",\n    "vendor_country_code": "NL",\n    "vendor_verification_status": "verified",\n    "vendor_is_active": true,\n    "name": "Productnaam",\n    "product_url": "https://voorbeeld.nl/product",\n    "source_reference": "https://voorbeeld.nl/product",\n    "price": null,\n    "weight_grams": null,\n    "kcal_per_100g": null,\n    "protein_per_100g": null,\n    "carbohydrates_per_100g": null,\n    "fat_per_100g": null,\n    "availability": "unknown"\n  }\n]'} /></label><button className="detail-cta" disabled={busy || !json.trim()} onClick={importProducts}>{busy ? "Controleren en opslaan…" : "Controleren en importeren"}</button><p className="detail-muted">Aanbieders worden niet automatisch aangemaakt of goedgekeurd. Onbekende waarden mogen null zijn.</p></section>}
       {message && <p className="admin-feedback">{message}</p>}
