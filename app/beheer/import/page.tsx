@@ -66,6 +66,7 @@ export default function AdminImportPage() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [resetMode, setResetMode] = useState(false);
+  const [previewRows, setPreviewRows] = useState<ImportRow[] | null>(null);
 
   useEffect(() => {
     if (!supabase) return;
@@ -110,28 +111,47 @@ export default function AdminImportPage() {
 
   async function logout() { await supabase?.auth.signOut(); setMessage("Je bent uitgelogd."); }
 
-  async function importProducts() {
-    setBusy(true); setErrors([]); setMessage("");
-    if (!supabase) { setBusy(false); return; }
+  async function previewProducts() {
+    setBusy(true); setErrors([]); setMessage(""); setPreviewRows(null);
+    if (!supabase) { setMessage("Supabase is niet ingesteld."); setBusy(false); return; }
     try {
       const parsed: unknown = JSON.parse(json);
       if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("Plak een JSON-lijst met minimaal één product.");
       const validation = validateRows(parsed, vendors);
       if (validation.length) { setErrors(validation); setBusy(false); return; }
       const rows = parsed as ImportRow[];
-      const keys = rows.map(r => [r.vendor_id, r.product_url] as const);
       const vendorIds = [...new Set(rows.map(r => r.vendor_id))];
       const { data: existing, error: existingError } = await supabase.from("products").select("vendor_id,product_url").in("vendor_id", vendorIds);
       if (existingError) throw new Error("Bestaande producten konden niet worden gecontroleerd.");
       const existingSet = new Set((existing ?? []).map(r => `${r.vendor_id}|${r.product_url}`.toLowerCase()));
-      const duplicates = keys.flatMap(([vendorId, url], i) => existingSet.has(`${vendorId}|${url}`.toLowerCase()) ? [`Regel ${i + 1}: deze productlink staat al in de catalogus; bestaande gegevens worden niet overschreven.`] : []);
+      const duplicates = rows.flatMap((row, i) => existingSet.has(`${row.vendor_id}|${row.product_url}`.toLowerCase()) ? [`Regel ${i + 1}: deze productlink staat al in de catalogus; bestaande gegevens worden niet overschreven.`] : []);
       if (duplicates.length) { setErrors(duplicates); setBusy(false); return; }
-      const payload = rows.map(row => Object.fromEntries(productColumns.filter(k => row[k] !== undefined).map(k => [k, row[k]])));
+      setPreviewRows(rows);
+      setMessage(`${rows.length} product(en) gecontroleerd. Bekijk de preview en bevestig daarna apart.`);
+    } catch (e) { setMessage(e instanceof Error ? e.message : "De JSON kon niet worden verwerkt."); }
+    setBusy(false);
+  }
+
+  async function confirmImport() {
+    if (!supabase || !previewRows?.length) return;
+    setBusy(true); setErrors([]); setMessage("");
+    try {
+      const vendorIds = [...new Set(previewRows.map(r => r.vendor_id))];
+      const { data: existing, error: existingError } = await supabase.from("products").select("vendor_id,product_url").in("vendor_id", vendorIds);
+      if (existingError) throw new Error("Bestaande producten konden niet opnieuw worden gecontroleerd.");
+      const existingSet = new Set((existing ?? []).map(r => `${r.vendor_id}|${r.product_url}`.toLowerCase()));
+      const duplicates = previewRows.filter(row => existingSet.has(`${row.vendor_id}|${row.product_url}`.toLowerCase()));
+      if (duplicates.length) {
+        setPreviewRows(null);
+        throw new Error("Een of meer producten zijn inmiddels toegevoegd. Voer de controle opnieuw uit; er is niets geïmporteerd.");
+      }
+      const payload = previewRows.map(row => Object.fromEntries(productColumns.filter(k => row[k] !== undefined).map(k => [k, row[k]])));
       const { error } = await supabase.from("products").insert(payload);
       if (error) throw new Error(error.message.includes("row-level security") ? "Database heeft de schrijfactie geblokkeerd. Controleer de beheerrol en SQL-migratie." : "Opslaan is niet gelukt. Controleer de importgegevens en database-instellingen.");
       setMessage(`${payload.length} product(en) succesvol geïmporteerd.`);
       setJson("");
-    } catch (e) { setMessage(e instanceof Error ? e.message : "De JSON kon niet worden verwerkt."); }
+      setPreviewRows(null);
+    } catch (e) { setMessage(e instanceof Error ? e.message : "Opslaan is niet gelukt."); }
     setBusy(false);
   }
 
@@ -141,7 +161,7 @@ export default function AdminImportPage() {
       <section className="hero"><div className="eyebrow">Beveiligd beheer</div><h1>Beheerlogin en import</h1><p className="intro">Alleen accounts die expliciet als beheerder zijn geregistreerd, kunnen producten importeren.</p></section>
       {!sessionUser && <form className="admin-login detail-panel" onSubmit={event => { event.preventDefault(); if (resetMode) void requestPasswordReset(); else void login(event); }}><h2>{resetMode ? "Wachtwoord herstellen" : "Inloggen"}</h2><label>E-mailadres<input type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} /></label>{!resetMode && <label>Wachtwoord<input type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} /></label>}<button className="detail-cta" disabled={busy}>{busy ? "Bezig…" : resetMode ? "Stuur herstellink" : "Inloggen"}</button><button type="button" className="admin-secondary" onClick={() => { setResetMode(!resetMode); setMessage(""); }}>{resetMode ? "Terug naar inloggen" : "Wachtwoord vergeten?"}</button></form>}
       {sessionUser && !isAdmin && <section className="detail-panel"><h2>Geen beheerrechten</h2><p>Je bent ingelogd, maar dit account staat niet in de beheerderslijst. Vraag de eigenaar om de juiste Auth-gebruikers-ID via Supabase SQL Editor toe te voegen.</p><button className="detail-cta" onClick={logout}>Uitloggen</button></section>}
-      {sessionUser && isAdmin && <section className="detail-panel admin-import-panel"><div className="admin-import-heading"><div><h2>Productimport (JSON)</h2><p>Controleer eerst de aanbieder, bronlinks, verplichte velden, numerieke waarden en dubbele producten. Bestaande producten worden niet overschreven.</p></div><button type="button" className="admin-secondary" onClick={logout}>Uitloggen</button></div><label>Plak een JSON-lijst<textarea rows={16} spellCheck={false} value={json} onChange={e => setJson(e.target.value)} placeholder={'[\n  {\n    "vendor_id": "UUID",\n    "vendor_country_code": "NL",\n    "vendor_verification_status": "verified",\n    "vendor_is_active": true,\n    "name": "Productnaam",\n    "product_url": "https://voorbeeld.nl/product",\n    "source_reference": "https://voorbeeld.nl/product",\n    "price": null,\n    "weight_grams": null,\n    "kcal_per_100g": null,\n    "protein_per_100g": null,\n    "carbohydrates_per_100g": null,\n    "fat_per_100g": null,\n    "availability": "unknown"\n  }\n]'} /></label><button className="detail-cta" disabled={busy || !json.trim()} onClick={importProducts}>{busy ? "Controleren en opslaan…" : "Controleren en importeren"}</button><p className="detail-muted">Aanbieders worden niet automatisch aangemaakt of goedgekeurd. Onbekende waarden mogen null zijn.</p></section>}
+      {sessionUser && isAdmin && <section className="detail-panel admin-import-panel"><div className="admin-import-heading"><div><h2>Productimport (JSON)</h2><p>Controleer eerst de aanbieder, bronlinks, verplichte velden, numerieke waarden en dubbele producten. Bestaande producten worden niet overschreven.</p></div><button type="button" className="admin-secondary" onClick={logout}>Uitloggen</button></div><label>Plak een JSON-lijst<textarea rows={16} spellCheck={false} value={json} onChange={e => { setJson(e.target.value); setPreviewRows(null); setErrors([]); setMessage(""); }} placeholder={'[\n  {\n    "vendor_id": "UUID",\n    "vendor_country_code": "NL",\n    "vendor_verification_status": "verified",\n    "vendor_is_active": true,\n    "name": "Productnaam",\n    "product_url": "https://voorbeeld.nl/product",\n    "source_reference": "https://voorbeeld.nl/product",\n    "price": null,\n    "weight_grams": null,\n    "kcal_per_100g": null,\n    "protein_per_100g": null,\n    "carbohydrates_per_100g": null,\n    "fat_per_100g": null,\n    "availability": "unknown"\n  }\n]'} /></label><button className="detail-cta" disabled={busy || !json.trim()} onClick={previewProducts}>{busy ? "Controleren…" : "Controleren en preview tonen"}</button>{previewRows && <section className="detail-panel"><h3>Importpreview: {previewRows.length} product(en)</h3><ul>{previewRows.map((row, index) => <li key={`${row.vendor_id}-${row.product_url}-${index}`}>{row.name} — {vendors.find(v => v.id === row.vendor_id)?.name ?? "Aanbieder onbekend"} — {row.price == null ? "Prijs onbekend" : `€ ${Number(row.price).toFixed(2)}`}</li>)}</ul><p className="detail-muted">Controleer de namen, aanbieders en prijzen. Er is nog niets opgeslagen.</p><button className="detail-cta" disabled={busy} onClick={confirmImport}>{busy ? "Opslaan…" : `Bevestig en importeer ${previewRows.length} product(en)`}</button><button type="button" className="admin-secondary" disabled={busy} onClick={() => { setPreviewRows(null); setMessage("Preview geannuleerd. Er is niets opgeslagen."); }}>Annuleren</button></section>}<p className="detail-muted">Aanbieders worden niet automatisch aangemaakt of goedgekeurd. Onbekende waarden mogen null zijn.</p></section>}
       {message && <p className="admin-feedback">{message}</p>}
       {errors.length > 0 && <section className="detail-panel admin-errors"><h2>Import afgekeurd</h2><ul>{errors.map((e,i)=><li key={i}>{e}</li>)}</ul></section>}
     </main><footer>Maaltijd Finder · Beveiligd beheer</footer>
