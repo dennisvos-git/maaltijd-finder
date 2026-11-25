@@ -68,20 +68,21 @@ export default function AdminImportPage() {
 
   useEffect(() => {
     if (!supabase) return;
+    const client = supabase;
     let active = true;
     const check = async (userId: string | null) => {
       if (!userId) { if (active) { setSessionUser(null); setIsAdmin(false); } return; }
-      const { data } = await supabase.from("admin_users").select("user_id").eq("user_id", userId).maybeSingle();
+      const { data } = await client.from("admin_users").select("user_id").eq("user_id", userId).maybeSingle();
       if (!active) return;
       setSessionUser(userId);
       setIsAdmin(Boolean(data));
       if (data) {
-        const { data: vendorRows } = await supabase.from("vendors").select("id,name,country_code,verification_status,is_active").eq("is_active", true).eq("country_code", "NL").eq("verification_status", "verified").order("name");
+        const { data: vendorRows } = await client.from("vendors").select("id,name,country_code,verification_status,is_active").eq("is_active", true).eq("country_code", "NL").eq("verification_status", "verified").order("name");
         if (active) setVendors((vendorRows ?? []) as Vendor[]);
       }
     };
-    void supabase.auth.getSession().then(({ data }) => check(data.session?.user.id ?? null));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => { void check(session?.user.id ?? null); });
+    void client.auth.getSession().then(({ data }) => check(data.session?.user.id ?? null));
+    const { data: listener } = client.auth.onAuthStateChange((_event, session) => { void check(session?.user.id ?? null); });
     return () => { active = false; listener.subscription.unsubscribe(); };
   }, []);
 
