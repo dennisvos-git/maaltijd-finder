@@ -26,7 +26,13 @@ type Meal = {
   vendors: { name: string; website_url: string | null; minimum_order_quantity: number | null; minimum_order_value: number | null; delivery_info: string | null } | { name: string; website_url: string | null; minimum_order_quantity: number | null; minimum_order_value: number | null; delivery_info: string | null }[] | null;
 };
 
-const dataFields = [\n  ["price", "prijs"], ["weight_grams", "gewicht"], ["kcal_per_100g", "energie"],\n  ["protein_per_100g", "eiwitten"], ["carbohydrates_per_100g", "koolhydraten"],\n  ["fat_per_100g", "vetten"], ["ingredients", "ingrediënten"],\n] as const;\n\nconst euro = (value: number) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
+const dataFields = [
+  ["price", "prijs"], ["weight_grams", "gewicht"], ["kcal_per_100g", "energie"],
+  ["protein_per_100g", "eiwitten"], ["carbohydrates_per_100g", "koolhydraten"],
+  ["fat_per_100g", "vetten"], ["ingredients", "ingrediënten"],
+] as const;
+
+const euro = (value: number) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
 const number = (value: number | null, suffix: string) => value == null ? "Niet opgegeven" : `${new Intl.NumberFormat("nl-NL", { maximumFractionDigits: 2 }).format(value)} ${suffix}`;
 const perPortion = (value: number | null, weightGrams: number | null) => value == null || weightGrams == null ? null : value * weightGrams / 100;
 
@@ -59,8 +65,11 @@ export default function MealDetailPage() {
   }, [params.id]);
 
   const vendor = meal ? (Array.isArray(meal.vendors) ? meal.vendors[0] ?? null : meal.vendors) : null;
-  const completeness = meal ? [meal.price, meal.weight_grams, meal.kcal_per_100g, meal.protein_per_100g, meal.carbohydrates_per_100g, meal.fat_per_100g, meal.ingredients]
-    .filter((value) => value !== null && value !== undefined && value !== "").length : 0;
+  const missingFields = meal ? dataFields.filter(([field]) => {
+    const value = meal[field];
+    return value === null || value === undefined || value === "";
+  }).map(([, label]) => label) : [];
+  const completeness = 7 - missingFields.length;
 
   return (
     <>
@@ -99,6 +108,7 @@ export default function MealDetailPage() {
               <section className="detail-panel completeness-panel">
                 <h2>Volledigheid productinformatie</h2>
                 <p><strong>{completeness} van 7 gegevens ingevuld</strong></p>
+                {missingFields.length > 0 ? <p>Ontbreekt nog: {missingFields.join(", ")}.</p> : <p>Alle zeven basisgegevens zijn ingevuld.</p>}
                 <p className="detail-muted">Dit geeft alleen aan hoeveel velden bekend zijn. Het is geen beoordeling van de maaltijd of de juistheid van de bron.</p>
               </section>
               <section className="detail-panel">
