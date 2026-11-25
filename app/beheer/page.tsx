@@ -143,10 +143,10 @@ export default function AdminOverviewPage() {
         </table></div>}
       </section>
       <section className="catalog">
-        <div className="catalog-heading"><div><div className="eyebrow">Aanbieders</div><h2>Registratie en scanstatus</h2></div></div>
+        <div className="catalog-heading"><div><div className="eyebrow">Aanbieders</div><h2>Aanbieders en scanconfiguratie</h2><p className="detail-muted">De scanstatus is alleen een configuratieveld. Er draait momenteel geen automatische dagelijkse scan.</p></div></div>
         <div className="admin-table-wrap"><table className="admin-table">
-          <thead><tr><th>Aanbieder</th><th>Land</th><th>Verificatie</th><th>Actief</th><th>Automatische scan</th><th>Website</th></tr></thead>
-          <tbody>{vendors.map(v => <tr key={v.id}><td>{v.name}</td><td>{v.country_code}</td><td>{v.verification_status}</td><td>{v.is_active ? "Ja" : "Nee"}</td><td>{v.scan_enabled ? "Ingeschakeld" : "Uitgeschakeld"}</td><td>{v.website_url ? <a href={v.website_url} target="_blank" rel="noreferrer">Website ↗</a> : "—"}</td></tr>)}</tbody>
+          <thead><tr><th>Aanbieder</th><th>Land</th><th>Verificatie</th><th>Actief</th><th>Scanconfiguratie</th><th>Website</th></tr></thead>
+          <tbody>{vendors.map(v => <tr key={v.id}><td>{v.name}</td><td>{v.country_code}</td><td>{v.verification_status}</td><td>{v.is_active ? "Ja" : "Nee"}</td><td>{v.scan_enabled ? "Aan (workflow niet actief)" : "Uit"}</td><td>{v.website_url ? <a href={v.website_url} target="_blank" rel="noreferrer">Website ↗</a> : "—"}</td></tr>)}</tbody>
         </table></div>
       </section>
       <section className="detail-panel admin-security-note">
