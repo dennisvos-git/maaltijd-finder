@@ -16,10 +16,10 @@ Gecontroleerd op 25 november 2026 aan de hand van de officiële individuele prod
 
 ## Tagliatelle - Beef Stroganoff
 - Productpagina: https://www.fuelyourbody.nl/tagliatelle-beef-stroganoff
-- Ingrediënten overgenomen van de sectie INGREDIËNTEN; alleen leesbare spaties en interpunctie genormaliseerd.
+- Ingrediëntenveld bewust leeg gelaten: de openbare tekst van de ingrediëntenlijst op de productpagina is zichtbaar onvolledig en eindigt zonder afsluiting. Geen ingrediëntenlijst reconstrueren of aanvullen.
 - Allergenen apart genoemd door de aanbieder: durumtarwe, gluten, melk (incl. lactose) en mosterd.
 - Bereiding: magnetron, pan, oven en steambox.
 - Voedingswaarden per 100 g overgenomen uit de voedingstabel op de productpagina.
 
 ## Import
-De bijbehorende SQL is `supabase/seeds/20261125_fuel_your_body_more_products.sql`. Deze voegt de twee losse maaltijden toe of werkt dezelfde product-URL bij. Er worden geen bulkvarianten toegevoegd. De allergenen worden niet in het ingrediëntenveld vermengd; er is in het huidige productschema geen afzonderlijk allergenenveld.
+De bijbehorende SQL is `supabase/seeds/20261125_fuel_your_body_more_products.sql`. Deze voegt de twee losse maaltijden toe of werkt dezelfde product-URL bij. Er worden geen bulkvarianten toegevoegd. De allergenen worden niet in het ingrediëntenveld vermengd; er is in het huidige productschema geen afzonderlijk allergenenveld. De ingrediënten van de Stroganoff blijven daarom leeg totdat een volledige officiële lijst beschikbaar is.
