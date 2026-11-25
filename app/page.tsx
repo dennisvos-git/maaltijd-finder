@@ -61,6 +61,11 @@ export default function Home() {
   const [dietaryLabel, setDietaryLabel] = useState("all");
   const [availability, setAvailability] = useState("all");
   const [dataStatus, setDataStatus] = useState("all");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [minWeight, setMinWeight] = useState("");
+  const [maxWeight, setMaxWeight] = useState("");
+  const [freshness, setFreshness] = useState("all");
   const [sort, setSort] = useState("name");
 
   useEffect(() => {
@@ -121,7 +126,14 @@ export default function Home() {
         && (preparation === "all" || product.preparation_method === preparation)
         && (dietaryLabel === "all" || (product.dietary_labels ?? []).includes(dietaryLabel))
         && (availability === "all" || product.availability === availability)
-        && (dataStatus === "all" || (dataStatus === "incomplete" ? missingData(product).length > 0 : missingData(product).length === 0));
+        && (dataStatus === "all" || (dataStatus === "incomplete" ? missingData(product).length > 0 : missingData(product).length === 0))
+        && (minPrice === "" || (product.price != null && product.price >= Number(minPrice)))
+        && (maxPrice === "" || (product.price != null && product.price <= Number(maxPrice)))
+        && (minWeight === "" || (product.weight_grams != null && product.weight_grams >= Number(minWeight)))
+        && (maxWeight === "" || (product.weight_grams != null && product.weight_grams <= Number(maxWeight)))
+        && (freshness === "all" || (freshness === "stale"
+          ? !product.last_checked_at || new Date(product.last_checked_at).getTime() < Date.now() - 30 * 24 * 60 * 60 * 1000
+          : Boolean(product.last_checked_at) && new Date(product.last_checked_at!).getTime() >= Date.now() - 30 * 24 * 60 * 60 * 1000));
     });
 
     return filtered.sort((a, b) => {
@@ -149,14 +161,14 @@ export default function Home() {
       }
       return a.name.localeCompare(b.name, "nl");
     });
-  }, [products, search, mealType, preparation, dietaryLabel, availability, dataStatus, sort]);
+  }, [products, search, mealType, preparation, dietaryLabel, availability, dataStatus, minPrice, maxPrice, minWeight, maxWeight, freshness, sort]);
 
   return (
     <>
       <header className="topbar">
         <div className="topbar-inner">
           <Link className="brand" href="/">Maaltijd <span>Finder</span></Link>
-          <nav className="nav-note site-nav"><Link href="/aanbieders">Aanbieders</Link><span>Eerlijk vergelijken. Slim kiezen.</span></nav>
+          <nav className="nav-note site-nav"><Link href="/aanbieders">Aanbieders</Link><Link href="/beheer">Controle-overzicht</Link><span>Eerlijk vergelijken. Slim kiezen.</span></nav>
         </div>
       </header>
 
@@ -222,6 +234,30 @@ export default function Home() {
                 <option value="all">Alle maaltijden</option>
                 <option value="incomplete">Alleen onvolledig</option>
                 <option value="complete">Volledig (7/7)</option>
+              </select>
+            </label>
+            <label>
+              <span>Minimumprijs (€)</span>
+              <input type="number" min="0" step="0.01" value={minPrice} onChange={(event) => setMinPrice(event.target.value)} placeholder="Geen minimum" />
+            </label>
+            <label>
+              <span>Maximumprijs (€)</span>
+              <input type="number" min="0" step="0.01" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} placeholder="Geen maximum" />
+            </label>
+            <label>
+              <span>Minimumgewicht (gram)</span>
+              <input type="number" min="1" step="1" value={minWeight} onChange={(event) => setMinWeight(event.target.value)} placeholder="Geen minimum" />
+            </label>
+            <label>
+              <span>Maximumgewicht (gram)</span>
+              <input type="number" min="1" step="1" value={maxWeight} onChange={(event) => setMaxWeight(event.target.value)} placeholder="Geen maximum" />
+            </label>
+            <label>
+              <span>Controledatum</span>
+              <select value={freshness} onChange={(event) => setFreshness(event.target.value)}>
+                <option value="all">Alle controledatums</option>
+                <option value="fresh">Gecontroleerd in 30 dagen</option>
+                <option value="stale">Ouder dan 30 dagen / onbekend</option>
               </select>
             </label>
             <label>
