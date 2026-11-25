@@ -55,4 +55,16 @@ node scripts/validate-product-import.mjs producten.json
 node scripts/validate-product-import.mjs producten.json --against bestaande-producten.json
 ```
 
-Voor controle tegen bestaande producten kun je in Supabase SQL Editor dit uitvoeren en de JSON-uitvoer opslaan als `bestaande-producten.json`:\n\n```sql\nselect coalesce(json_agg(json_build_object(\n  'vendor_id', vendor_id,\n  'product_url', product_url\n)), '[]'::json) as products\nfrom public.products;\n```\n\nSla de waarde van `products` op als een JSON-lijst (dus alleen de array) en gebruik daarna de opdracht met `--against`. Zo worden ook combinaties gecontroleerd die al in Supabase staan. De database heeft daarnaast zelf al een unieke index op aanbieder plus productlink.\n\nDe GitHub-controle voert de zelftest automatisch uit bij wijzigingen. Een geslaagde controle betekent alleen dat de gegevens de technische basiscontroles doorstaan; de bron en productdetails moeten nog steeds inhoudelijk worden nagekeken.
+Voor controle tegen bestaande producten kun je in Supabase SQL Editor dit uitvoeren en de JSON-uitvoer opslaan als `bestaande-producten.json`:
+
+```sql
+select coalesce(json_agg(json_build_object(
+  'vendor_id', vendor_id,
+  'product_url', product_url
+)), '[]'::json) as products
+from public.products;
+```
+
+Sla de waarde van `products` op als een JSON-lijst (dus alleen de array) en gebruik daarna de opdracht met `--against`. Zo worden ook combinaties gecontroleerd die al in Supabase staan. De database heeft daarnaast zelf al een unieke index op aanbieder plus productlink.
+
+De GitHub-controle voert de zelftest automatisch uit bij wijzigingen. Een geslaagde controle betekent alleen dat de gegevens de technische basiscontroles doorstaan; de bron en productdetails moeten nog steeds inhoudelijk worden nagekeken.
