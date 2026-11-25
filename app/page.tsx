@@ -267,8 +267,8 @@ export default function Home() {
             <div className="product-grid">
               {visibleProducts.map((product) => {
                 const vendor = vendorFor(product);
-                const completeness = [product.price, product.weight_grams, product.kcal_per_100g, product.protein_per_100g, product.carbohydrates_per_100g, product.fat_per_100g, product.ingredients]
-                  .filter((value) => value !== null && value !== undefined && value !== "").length;
+                const missingFields = missingData(product);
+                const completeness = 7 - missingFields.length;
                 const pricePerKg = product.price != null && product.weight_grams
                   ? product.price / (product.weight_grams / 1000)
                   : null;
