@@ -1,9 +1,11 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <>
       <header className="topbar">
         <div className="topbar-inner">
-          <a className="brand" href="/">Maaltijd <span>Finder</span></a>
+          <Link className="brand" href="/">Maaltijd <span>Finder</span></Link>
           <div className="nav-note">Eerlijk vergelijken. Slim kiezen.</div>
         </div>
       </header>
