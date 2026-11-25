@@ -90,3 +90,9 @@ footer { max-width: 1180px; margin: auto; padding: 0 24px 32px; color: var(--mut
 .completeness-note { margin: 0 0 8px; color: var(--muted); font-size: 10px; }
 .completeness-panel > p { margin: 8px 0 0; }
 .completeness-panel > p strong { color: var(--green-dark); }
+
+
+.nutrition-list dd { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(120px, 1fr); gap: 12px; text-align: right; }
+.nutrition-list dd strong, .nutrition-list dd span { font-weight: 500; }
+.nutrition-list dd span { color: var(--muted, #667085); }
+@media (max-width: 600px) { .nutrition-list dd { grid-template-columns: 1fr; gap: 3px; } }
