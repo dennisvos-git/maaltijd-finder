@@ -90,6 +90,7 @@ export default function AdminImportPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) setMessage("Inloggen is niet gelukt. Controleer het e-mailadres en wachtwoord.");
+    else setMessage("Inloggen gelukt. Beheerrechten worden gecontroleerd.");
   }
 
   async function logout() { await supabase?.auth.signOut(); setMessage("Je bent uitgelogd."); }
