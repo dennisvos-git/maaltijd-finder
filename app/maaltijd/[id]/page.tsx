@@ -28,6 +28,7 @@ type Meal = {
 
 const euro = (value: number) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
 const number = (value: number | null, suffix: string) => value == null ? "Niet opgegeven" : `${new Intl.NumberFormat("nl-NL", { maximumFractionDigits: 2 }).format(value)} ${suffix}`;
+const perPortion = (value: number | null, weightGrams: number | null) => value == null || weightGrams == null ? null : value * weightGrams / 100;
 
 export default function MealDetailPage() {
   const params = useParams<{ id: string }>();
