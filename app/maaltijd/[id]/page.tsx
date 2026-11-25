@@ -23,7 +23,7 @@ type Meal = {
   dietary_labels: string[];
   availability: "available" | "unavailable" | "unknown";
   last_checked_at: string | null;
-  vendors: { name: string; website_url: string | null; minimum_order_quantity: number | null; delivery_info: string | null } | { name: string; website_url: string | null; minimum_order_quantity: number | null; delivery_info: string | null }[] | null;
+  vendors: { name: string; website_url: string | null; minimum_order_quantity: number | null; minimum_order_value: number | null; delivery_info: string | null } | { name: string; website_url: string | null; minimum_order_quantity: number | null; minimum_order_value: number | null; delivery_info: string | null }[] | null;
 };
 
 const euro = (value: number) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
@@ -41,7 +41,7 @@ export default function MealDetailPage() {
       if (!supabase) { setLoading(false); return; }
       const { data, error: queryError } = await supabase
         .from("products")
-        .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors(name, website_url, minimum_order_quantity, delivery_info)")
+        .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors(name, website_url, minimum_order_quantity, minimum_order_value, delivery_info)")
         .eq("id", params.id)
         .eq("is_active", true)
         .maybeSingle();
@@ -83,7 +83,9 @@ export default function MealDetailPage() {
               <div className="detail-price">{meal.price == null ? "Prijs onbekend" : euro(meal.price)}{meal.weight_grams != null && <span>{meal.weight_grams} gram</span>}</div>
               {meal.dietary_labels?.length > 0 && <div className="detail-labels">{meal.dietary_labels.map(label => <span className="tag" key={label}>{label}</span>)}</div>}
               <a className="detail-cta" href={meal.product_url} target="_blank" rel="noreferrer">Bekijk bij aanbieder ↗</a>
+              <p className="delivery-note">Beschikbaarheid: {meal.availability === "available" ? "Beschikbaar volgens de laatst bekende informatie" : meal.availability === "unavailable" ? "Momenteel niet beschikbaar volgens de laatst bekende informatie" : "Nog niet gecontroleerd"}</p>
               {vendor?.minimum_order_quantity != null && <p className="delivery-note">Minimale bestelling bij deze aanbieder: {vendor.minimum_order_quantity} maaltijden</p>}
+              {vendor?.minimum_order_value != null && <p className="delivery-note">Minimale bestelwaarde bij deze aanbieder: {euro(vendor.minimum_order_value)}</p>}
               {vendor?.delivery_info && <p className="detail-delivery">{vendor.delivery_info}</p>}
               {meal.last_checked_at && <p className="checked-note">Productinformatie gecontroleerd: {new Date(meal.last_checked_at).toLocaleDateString("nl-NL")}</p>}
             </div>
