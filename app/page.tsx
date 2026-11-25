@@ -49,6 +49,11 @@ export default function Home() {
   const [sort, setSort] = useState("name");
 
   useEffect(() => {
+    const vendorFilter = new URLSearchParams(window.location.search).get("aanbieder");
+    if (vendorFilter) setSearch(vendorFilter);
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function loadProducts() {
@@ -108,7 +113,7 @@ export default function Home() {
       <header className="topbar">
         <div className="topbar-inner">
           <Link className="brand" href="/">Maaltijd <span>Finder</span></Link>
-          <div className="nav-note">Eerlijk vergelijken. Slim kiezen.</div>
+          <nav className="nav-note site-nav"><Link href="/aanbieders">Aanbieders</Link><span>Eerlijk vergelijken. Slim kiezen.</span></nav>
         </div>
       </header>
 
