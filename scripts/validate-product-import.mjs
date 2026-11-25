@@ -126,15 +126,25 @@ function selfTest() {
   const duplicateResult = validate([valid], [{ vendor_id: valid.vendor_id, product_url: valid.product_url }]);
   const impossibleNutrition = validate([{ ...valid, protein_per_100g: 60, carbohydrates_per_100g: 30, fat_per_100g: 20 }]);
   const suspiciousEnergy = validate([{ ...valid, kcal_per_100g: 50, protein_per_100g: 20, carbohydrates_per_100g: 20, fat_per_100g: 20 }]);
+  const duplicateInFile = validate([valid, { ...valid, name: "Dubbele testmaaltijd" }]);
+  const invalidAvailability = validate([{ ...valid, availability: "maybe" }]);
+  const invalidDietaryLabels = validate([{ ...valid, dietary_labels: ["vegan", 42] }]);
+  const partialNutrition = validate([{ ...valid, protein_per_100g: 20 }]);
+  const nonObjectRow = validate([null]);
   if (validResult.errors.length || invalidResult.errors.length < 4 ||
       !duplicateResult.errors.some((e) => e.includes("bestaande catalogus")) ||
+      !duplicateInFile.errors.some((e) => e.includes("dubbele combinatie")) ||
       !impossibleNutrition.errors.some((e) => e.includes("meer dan 100 gram")) ||
-      !suspiciousEnergy.warnings.length) {
-    console.error("Zelftest mislukt.", { validResult, invalidResult, duplicateResult, impossibleNutrition, suspiciousEnergy });
+      !suspiciousEnergy.warnings.length ||
+      !invalidAvailability.errors.some((e) => e.includes("availability")) ||
+      !invalidDietaryLabels.errors.some((e) => e.includes("dietary_labels")) ||
+      !partialNutrition.warnings.length ||
+      !nonObjectRow.errors.some((e) => e.includes("verwacht een object"))) {
+    console.error("Zelftest mislukt.", { validResult, invalidResult, duplicateResult, duplicateInFile, impossibleNutrition, suspiciousEnergy, invalidAvailability, invalidDietaryLabels, partialNutrition, nonObjectRow });
     process.exitCode = 1;
     return;
   }
-  console.log("Zelftest geslaagd: geldige lege waarden, aanbiederstatus, dubbele producten en voedingswaardelogica gecontroleerd.");
+  console.log("Zelftest geslaagd: lege en gedeeltelijke voedingswaarden, aanbiederstatus, dubbele producten, ongeldige invoer en voedingswaardelogica gecontroleerd.");
 }
 
 async function main() {
