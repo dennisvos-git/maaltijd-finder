@@ -33,7 +33,18 @@ type Product = {
   vendors: Vendor | Vendor[] | null;
 };
 
-const dataFields = [\n  ["price", "prijs"], ["weight_grams", "gewicht"], ["kcal_per_100g", "energie"],\n  ["protein_per_100g", "eiwitten"], ["carbohydrates_per_100g", "koolhydraten"],\n  ["fat_per_100g", "vetten"], ["ingredients", "ingrediënten"],\n] as const;\n\nconst missingData = (product: Product) => dataFields.filter(([field]) => {\n  const value = product[field];\n  return value === null || value === undefined || value === "";\n}).map(([, label]) => label);\n\nconst euro = (value: number) =>
+const dataFields = [
+  ["price", "prijs"], ["weight_grams", "gewicht"], ["kcal_per_100g", "energie"],
+  ["protein_per_100g", "eiwitten"], ["carbohydrates_per_100g", "koolhydraten"],
+  ["fat_per_100g", "vetten"], ["ingredients", "ingrediënten"],
+] as const;
+
+const missingData = (product: Product) => dataFields.filter(([field]) => {
+  const value = product[field];
+  return value === null || value === undefined || value === "";
+}).map(([, label]) => label);
+
+const euro = (value: number) =>
   new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
 
 function vendorFor(product: Product): Vendor | null {
@@ -49,6 +60,7 @@ export default function Home() {
   const [preparation, setPreparation] = useState("all");
   const [dietaryLabel, setDietaryLabel] = useState("all");
   const [availability, setAvailability] = useState("all");
+  const [dataStatus, setDataStatus] = useState("all");
   const [sort, setSort] = useState("name");
 
   useEffect(() => {
@@ -96,7 +108,9 @@ export default function Home() {
     [products]
   );
 
-  const incompleteCount = useMemo(() => products.filter((product) => missingData(product).length > 0).length, [products]);\n\n  const visibleProducts = useMemo(() => {
+  const incompleteCount = useMemo(() => products.filter((product) => missingData(product).length > 0).length, [products]);
+
+  const visibleProducts = useMemo(() => {
     const term = search.trim().toLocaleLowerCase("nl-NL");
     const filtered = products.filter((product) => {
       const vendor = vendorFor(product);
@@ -106,7 +120,8 @@ export default function Home() {
         && (mealType === "all" || product.meal_type === mealType)
         && (preparation === "all" || product.preparation_method === preparation)
         && (dietaryLabel === "all" || (product.dietary_labels ?? []).includes(dietaryLabel))
-        && (availability === "all" || product.availability === availability)\n        && (dataStatus === "all" || (dataStatus === "incomplete" ? missingData(product).length > 0 : missingData(product).length === 0));
+        && (availability === "all" || product.availability === availability)
+        && (dataStatus === "all" || (dataStatus === "incomplete" ? missingData(product).length > 0 : missingData(product).length === 0));
     });
 
     return filtered.sort((a, b) => {
@@ -164,7 +179,9 @@ export default function Home() {
             <span className="result-count">{loading ? "Laden…" : `${visibleProducts.length} maaltijden`}</span>
           </div>
 
-          {!loading && products.length > 0 && <p className="catalog-data-summary">{incompleteCount} van {products.length} maaltijden missen nog één of meer gegevens. Ontbrekende velden staan per maaltijd vermeld.</p>}\n\n          <div className="filters">
+          {!loading && products.length > 0 && <p className="catalog-data-summary">{incompleteCount} van {products.length} maaltijden missen nog één of meer gegevens. Ontbrekende velden staan per maaltijd vermeld.</p>}
+
+          <div className="filters">
             <label className="search-field">
               <span>Zoeken</span>
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Zoek op maaltijd of aanbieder…" />
@@ -197,6 +214,14 @@ export default function Home() {
                 <option value="available">Beschikbaar</option>
                 <option value="unavailable">Niet beschikbaar</option>
                 <option value="unknown">Onbekend</option>
+              </select>
+            </label>
+            <label>
+              <span>Productinformatie</span>
+              <select value={dataStatus} onChange={(event) => setDataStatus(event.target.value)}>
+                <option value="all">Alle maaltijden</option>
+                <option value="incomplete">Alleen onvolledig</option>
+                <option value="complete">Volledig (7/7)</option>
               </select>
             </label>
             <label>
@@ -261,7 +286,8 @@ export default function Home() {
                       </div>
                       <h3><Link href={`/maaltijd/${product.id}`}>{product.name}</Link></h3>
                       <p className="vendor-name">{vendor?.name ?? "Aanbieder onbekend"}</p>
-                      <p className="completeness-note">Productinformatie: {completeness}/7 gegevens ingevuld</p>\n                      {missingFields.length > 0 && <p className="missing-data-note">Ontbreekt nog: {missingFields.join(", ")}</p>}
+                      <p className="completeness-note">Productinformatie: {completeness}/7 gegevens ingevuld</p>
+                      {missingFields.length > 0 && <p className="missing-data-note">Ontbreekt nog: {missingFields.join(", ")}</p>}
                       <div className="product-facts">
                         {product.weight_grams && <span>{product.weight_grams} g</span>}
                         {product.kcal_per_100g != null && <span>{product.kcal_per_100g} kcal / 100 g</span>}
