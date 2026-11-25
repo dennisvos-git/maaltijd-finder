@@ -1,33 +1,49 @@
 # Beheer, prijsregistratie en gegevenscontrole
 
-## Wat is toegevoegd
-- `/beheer`: alleen-lezen controlepaneel met aantallen, ontbrekende productvelden, oude controledatums en aanbiederstatus.
-- Catalogusfilters: minimum- en maximumprijs, minimum- en maximumgewicht, en controle in de afgelopen 30 dagen.
+## Wat werkt er nu
+- `/beheer`: kwaliteitsdashboard met aantallen, ontbrekende productvelden, oude controledatums en aanbiederstatus.
+- `/beheer/import`: beveiligde Supabase Auth-login en JSON-import voor accounts die in `public.admin_users` staan.
+- Catalogusfilters: zoeken, maaltijdsoort, bereiding, dieetkenmerk, beschikbaarheid, volledigheid, prijs, gewicht, controledatum en sortering.
 - Productdetail: geregistreerde prijsmeetpunten.
-- `supabase/migrations/20261125_price_history_trigger.sql`: legt een meetpunt vast bij een nieuw product en bij een gewijzigde prijs of beschikbaarheid.
+- `supabase/migrations/20261125_price_history_trigger.sql`: registreert prijs- en beschikbaarheidswijzigingen.
+- `supabase/migrations/20261125_admin_roles_and_import_policies.sql`: beheerderslijst en beperkte databasepolicies.
+- `scripts/validate-product-import.mjs`: zelfstandige importvalidator met zelftest via `npm run validate:imports`.
 
-## Eenmalige Supabase-stap voor prijsgeschiedenis
+## Beheerlogin en rechten
+1. Maak de beheerder aan via Supabase Dashboard → Authentication → Users.
+2. Voeg de UUID van die Auth-gebruiker toe aan `public.admin_users` via SQL Editor:
+   ```sql
+   insert into public.admin_users (user_id)
+   values ('AUTH-USER-UUID')
+   on conflict (user_id) do nothing;
+   ```
+3. Open `/beheer/import` en log in met dat Auth-account.
+
+De importpagina accepteert alleen aanbieders die actief, geverifieerd en Nederlands zijn. De import controleert verplichte velden, links, numerieke grenzen, beschikbaarheidsstatus en dubbele productlinks. Een bestaand product wordt niet overschreven: de import wordt dan afgekeurd. Onbekende waarden mogen leeg/null blijven.
+
+De huidige importpagina voegt producten toe; zij biedt geen productbewerking of verwijdering. De database kent voor beheerders beperkte insert/update-policies op producten en aanbieders, maar kent bewust geen DELETE-recht toe. De publieke website blijft alleen-lezen. Deel nooit een Supabase service-role key met de browser en vraag nooit om wachtwoorden of tokens in chat.
+
+## Wachtwoord herstellen
+De beheerlogin bevat een functie 'Wachtwoord vergeten?'. De Supabase Auth URL Configuration moet de productie-URL als Site URL hebben en de redirect naar `/beheer/wachtwoord-reset` toestaan. De app gebruikt `NEXT_PUBLIC_SITE_URL` als die is ingesteld; anders de huidige domeinnaam.
+
+## Prijsgeschiedenis
 Voer `supabase/migrations/20261125_price_history_trigger.sql` uit in Supabase SQL Editor. De migratie:
 - maakt een trigger op products;
-- schrijft een meetpunt als een product wordt ingevoegd of prijs/beschikbaarheid verandert;
+- schrijft een meetpunt bij een nieuw product en bij een gewijzigde prijs of beschikbaarheid;
 - maakt voor bestaande producten één startmeetpunt met de huidige prijs;
-- geeft de publieke rollen alleen SELECT op prijsgeschiedenis.
+- geeft publieke rollen alleen SELECT op prijsgeschiedenis.
 
-Let op: de startmeetpunten zijn geen terugwerkende prijsgeschiedenis. Alleen wijzigingen vanaf installatie van de trigger worden automatisch vastgelegd. Er is nog geen automatische dagelijkse broncontrole of scraper actief.
+De startmeetpunten zijn geen terugwerkende prijsgeschiedenis. Alleen wijzigingen vanaf installatie van de trigger worden automatisch vastgelegd.
 
-## Beheeromgeving en beveiliging
-De beheerroute is voorlopig een kwaliteitsdashboard met alleen openbare catalogusgegevens. Er staan bewust geen bewerk- of importknoppen in. De publieke Supabase-rollen zijn read-only. De volgende stap voor echt beheer is Supabase Auth met een beheerdersrol en een server-side importfunctie. Maak geen browser-side schrijfrechten aan en deel nooit een service-role key met de browser.
-
-Voor ingebruikname van echte beheerschrijfacties moeten minimaal geregeld zijn:
-1. Supabase Auth-login voor de beheerder.
-2. Een beheerdersrol die alleen via een vertrouwde SQL/server-side procedure wordt toegekend.
-3. Server-side validatie met `scripts/validate-product-import.mjs`-regels als basis.
-4. Een importpreview met aantallen toevoegingen, updates, duplicaten, waarschuwingen en afkeuringen.
-5. Een expliciete bevestiging vóór een transactie wordt opgeslagen.
-6. Een auditlog van wie wat heeft gewijzigd en wanneer.
-
-## Importcontrole
-De bestaande Node-validator controleert onder meer aanbiederstatus, Nederlandse levering, productlinks, dubbele producten, numerieke grenzen en onwaarschijnlijke voedingswaarden. De validator voert zelf geen databasewrites uit. Onbekende waarden blijven leeg.
-
-## Handmatige controle op verouderde gegevens
+## Verouderde productinformatie
 Het dashboard markeert een product als oud als `last_checked_at` ontbreekt of ouder is dan 30 dagen. Dit is een signaal voor handmatige controle, geen automatische controle van de webshop.
+
+## Automatische scans
+Er draait op dit moment geen betrouwbare automatische dagelijkse scan van aanbieders. De `scan_enabled`-kolom is alleen een statusveld; die start op zichzelf geen scan. Zet scans pas aan wanneer een gecontroleerde scanworkflow, logging en foutafhandeling daadwerkelijk zijn ingericht.
+
+## Veilige importwerkwijze
+- Gebruik alleen gecontroleerde brongegevens van actieve, geverifieerde Nederlandse aanbieders.
+- Vul geen ontbrekende voedingswaarden of prijzen op basis van aannames in; laat ze leeg.
+- Controleer de JSON eerst lokaal met `npm run validate:imports` of met het script en een importbestand.
+- Controleer bronlinks en duplicaten vóór import.
+- Importeer kleine batches; controleer daarna het dashboard en de productdetailpagina.
