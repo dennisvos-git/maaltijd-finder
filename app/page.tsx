@@ -193,8 +193,8 @@ export default function Home() {
 
           {!loading && products.length > 0 && <p className="catalog-data-summary">{incompleteCount} van {products.length} maaltijden missen nog één of meer gegevens. Ontbrekende velden staan per maaltijd vermeld.</p>}
 
-          <div className="catalog-layout">
-            <aside className="filters" aria-label="Filters en sortering">
+          <div className="catalog-layout" style={{ display: "grid", gridTemplateColumns: "260px minmax(0, 1fr)", gap: "24px", alignItems: "start", width: "100%" }}>
+            <aside className="filters" aria-label="Filters en sortering" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", alignSelf: "start", width: "100%" }}>
             <label className="search-field">
               <span>Zoeken</span>
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Zoek op maaltijd of aanbieder…" />
