@@ -41,9 +41,12 @@ export default function MealDetailPage() {
       if (!supabase) { setLoading(false); return; }
       const { data, error: queryError } = await supabase
         .from("products")
-        .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors(name, website_url, minimum_order_quantity, minimum_order_value, delivery_info)")
+        .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors!inner(name, website_url, minimum_order_quantity, minimum_order_value, delivery_info, verification_status, country_code, is_active)")
         .eq("id", params.id)
         .eq("is_active", true)
+        .eq("vendors.verification_status", "verified")
+        .eq("vendors.country_code", "NL")
+        .eq("vendors.is_active", true)
         .maybeSingle();
       if (cancelled) return;
       if (queryError) setError("De maaltijdgegevens konden niet worden opgehaald.");
