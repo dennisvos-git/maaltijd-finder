@@ -21,6 +21,8 @@ type Product = {
   weight_grams: number | null;
   kcal_per_100g: number | null;
   protein_per_100g: number | null;
+  carbohydrates_per_100g: number | null;
+  fat_per_100g: number | null;
   meal_type: string | null;
   preparation_method: string | null;
   category: string | null;
@@ -57,7 +59,7 @@ export default function Home() {
 
       const { data, error: queryError } = await supabase
         .from("products")
-        .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors(name, website_url, minimum_order_quantity, minimum_order_value)")
+        .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors(name, website_url, minimum_order_quantity, minimum_order_value)")
         .eq("is_active", true);
 
       if (cancelled) return;
@@ -209,6 +211,8 @@ export default function Home() {
                         {product.weight_grams && <span>{product.weight_grams} g</span>}
                         {product.kcal_per_100g != null && <span>{product.kcal_per_100g} kcal / 100 g</span>}
                         {product.protein_per_100g != null && <span>{product.protein_per_100g} g eiwit / 100 g</span>}
+                        {product.carbohydrates_per_100g != null && <span>{product.carbohydrates_per_100g} g koolhydraten / 100 g</span>}
+                        {product.fat_per_100g != null && <span>{product.fat_per_100g} g vet / 100 g</span>}
                       </div>
                       <div className="product-bottom">
                         <div>
