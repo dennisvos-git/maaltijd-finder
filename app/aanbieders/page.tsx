@@ -88,7 +88,7 @@ export default function VendorsPage() {
                       {vendor.minimum_order_value != null && <span>Minimale orderwaarde: {euro(vendor.minimum_order_value)}</span>}
                     </div>
                     {vendor.last_checked_at && <p className="checked-note">Gecontroleerd: {new Date(vendor.last_checked_at).toLocaleDateString("nl-NL")}</p>}
-                    {vendor.website_url && <a className="product-link" href={vendor.website_url} target="_blank" rel="noreferrer">Naar aanbieder ↗</a>}
+                    <div className="vendor-actions"><Link className="product-link" href={`/?aanbieder=${encodeURIComponent(vendor.name)}`}>Bekijk maaltijden van deze aanbieder →</Link>{vendor.website_url && <a className="product-link" href={vendor.website_url} target="_blank" rel="noreferrer">Naar aanbieder ↗</a>}</div>
                   </div>
                 </article>
               ))}
