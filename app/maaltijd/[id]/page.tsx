@@ -103,13 +103,15 @@ export default function MealDetailPage() {
               </section>
               <section className="detail-panel">
                 <h2>Voedingswaarden</h2>
-                <p className="detail-muted">Per 100 gram</p>
+                <p className="detail-muted">Bronwaarden per 100 gram. Portiewaarden zijn berekend met het opgegeven maaltijdgewicht en zijn schattingen.</p>
                 <dl className="nutrition-list">
-                  <div><dt>Energie</dt><dd>{number(meal.kcal_per_100g, "kcal")}</dd></div>
-                  <div><dt>Eiwitten</dt><dd>{number(meal.protein_per_100g, "g")}</dd></div>
-                  <div><dt>Koolhydraten</dt><dd>{number(meal.carbohydrates_per_100g, "g")}</dd></div>
-                  <div><dt>Vetten</dt><dd>{number(meal.fat_per_100g, "g")}</dd></div>
+                  <div><dt>Voedingswaarde</dt><dd><strong>Per 100 g</strong><span>Geschat per maaltijd</span></dd></div>
+                  <div><dt>Energie</dt><dd>{number(meal.kcal_per_100g, "kcal")}<span>{number(perPortion(meal.kcal_per_100g, meal.weight_grams), "kcal")}</span></dd></div>
+                  <div><dt>Eiwitten</dt><dd>{number(meal.protein_per_100g, "g")}<span>{number(perPortion(meal.protein_per_100g, meal.weight_grams), "g")}</span></dd></div>
+                  <div><dt>Koolhydraten</dt><dd>{number(meal.carbohydrates_per_100g, "g")}<span>{number(perPortion(meal.carbohydrates_per_100g, meal.weight_grams), "g")}</span></dd></div>
+                  <div><dt>Vetten</dt><dd>{number(meal.fat_per_100g, "g")}<span>{number(perPortion(meal.fat_per_100g, meal.weight_grams), "g")}</span></dd></div>
                 </dl>
+                {meal.weight_grams == null && <p className="detail-muted">Een schatting per maaltijd is niet mogelijk omdat het gewicht ontbreekt.</p>}
               </section>
               <section className="detail-panel">
                 <h2>Ingrediënten</h2>
