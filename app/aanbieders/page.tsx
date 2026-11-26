@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { isSupabaseConfigured, supabase } from "../../lib/supabase";
+import { fetchAllRows } from "../../lib/fetch-all-rows";
 
 type Vendor = {
   id: string;
@@ -41,18 +42,25 @@ export default function VendorsPage() {
     let cancelled = false;
 
     async function loadVendors() {
-      if (!supabase) {
+      // Bewaar de geconfigureerde client lokaal: TypeScript kan de null-check
+      // niet betrouwbaar doortrekken naar de callback die fetchAllRows uitvoert.
+      const db = supabase;
+      if (!db) {
         setLoading(false);
         return;
       }
 
-      const { data, error: queryError } = await supabase
-        .from("vendors")
-        .select("id, name, website_url, delivery_info, minimum_order_quantity, minimum_order_value, last_checked_at")
-        .eq("is_active", true)
-        .eq("verification_status", "verified")
-        .eq("country_code", "NL")
-        .order("name");
+      const { data, error: queryError } = await fetchAllRows(
+        (from, to) => db
+          .from("vendors")
+          .select("id, name, website_url, delivery_info, minimum_order_quantity, minimum_order_value, last_checked_at")
+          .eq("is_active", true)
+          .eq("verification_status", "verified")
+          .eq("country_code", "NL")
+          .order("name")
+          .order("id")
+          .range(from, to)
+      );
 
       if (cancelled) return;
       if (queryError) setError("De aanbieders konden niet worden opgehaald. Probeer het later opnieuw.");

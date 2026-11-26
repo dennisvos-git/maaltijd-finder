@@ -9,6 +9,7 @@
 - Catalogusfilters: maaltijdsoort, bereiding, dieetkenmerk, beschikbaarheid, volledigheid, prijs, gewicht, controledatum en sortering.
 - Productdetail: geregistreerde prijsmeetpunten.
 - `supabase/migrations/20261125_price_history_trigger.sql`: registreert prijs- en beschikbaarheidswijzigingen in de database.
+- `supabase/migrations/20261126_public_price_history_read_policy.sql`: maakt meetpunten publiek leesbaar voor producten die nog zichtbaar zijn in de gecontroleerde Nederlandse catalogus.
 - `supabase/migrations/20261125_admin_roles_and_import_policies.sql`: beheerderslijst en beperkte databasepolicies.
 - `scripts/validate-product-import.mjs`: zelfstandige importvalidator met zelftest via `npm run validate:imports`.
 
@@ -22,7 +23,7 @@
    ```
 3. Open `/beheer/import` en log in met dat Auth-account.
 
-De importpagina accepteert alleen aanbieders die actief, geverifieerd en Nederlands zijn. De import controleert verplichte velden, bronlinks, numerieke grenzen, beschikbaarheidsstatus en dubbele productlinks. Voor het opslaan wordt een preview getoond; de beheerder moet apart bevestigen. Vlak voor het opslaan worden duplicaten opnieuw gecontroleerd. Een bestaand product wordt niet overschreven. Opvallend afwijkende kcal-waarden geven een waarschuwing die handmatige broncontrole vraagt; de import wordt daardoor niet automatisch afgekeurd. Onbekende waarden mogen leeg/null blijven.
+De importpagina accepteert alleen aanbieders die actief, geverifieerd en Nederlands zijn. De import controleert verplichte velden, bronlinks, numerieke grenzen, beschikbaarheidsstatus, dubbele productlinks en gegevenstypen. `is_active` moet een echte boolean zijn; tekstvelden zoals ingrediënten en bereidingswijze mogen geen objecten of lijsten bevatten. Voor het opslaan wordt een preview getoond; de beheerder moet apart bevestigen. Vlak voor het opslaan worden duplicaten opnieuw gecontroleerd. Een bestaand product wordt niet overschreven. Opvallend afwijkende kcal-waarden geven een waarschuwing die handmatige broncontrole vraagt; de import wordt daardoor niet automatisch afgekeurd. Onbekende waarden mogen leeg/null blijven.
 
 De huidige importpagina voegt uitsluitend nieuwe producten toe; zij biedt geen productbewerking of verwijdering. Aanbieders kunnen niet via de import worden aangemaakt of goedgekeurd. De database kent voor beheerders beperkte insert/update-policies op producten en aanbieders, maar kent bewust geen DELETE-recht toe. De publieke website blijft alleen-lezen. Deel nooit een Supabase service-role key met de browser en vraag nooit om wachtwoorden of tokens in chat.
 
@@ -30,11 +31,11 @@ De huidige importpagina voegt uitsluitend nieuwe producten toe; zij biedt geen p
 De beheerlogin bevat een functie 'Wachtwoord vergeten?'. De Supabase Auth URL Configuration moet de productie-URL als Site URL hebben en de redirect naar `/beheer/wachtwoord-reset` toestaan. De app gebruikt `NEXT_PUBLIC_SITE_URL` als die is ingesteld; anders de huidige domeinnaam.
 
 ## Prijsgeschiedenis
-Voer `supabase/migrations/20261125_price_history_trigger.sql` uit in Supabase SQL Editor. De migratie:
+Voer `supabase/migrations/20261125_price_history_trigger.sql` uit in Supabase SQL Editor. Voer daarna ook `supabase/migrations/20261126_public_price_history_read_policy.sql` uit. De eerste migratie:
 - maakt een trigger op products;
 - schrijft een meetpunt bij een nieuw product en bij een gewijzigde prijs of beschikbaarheid;
 - maakt voor bestaande producten één startmeetpunt met de huidige prijs;
-- geeft publieke rollen alleen SELECT op prijsgeschiedenis.
+- geeft publieke rollen alleen SELECT op prijsgeschiedenis. De aanvullende migratie maakt daarvoor ook expliciet een Row Level Security SELECT-policy aan; die laat alleen historie zien van actieve producten van actieve, geverifieerde Nederlandse aanbieders. Zonder een passende RLS-policy is een SQL SELECT-grant op zichzelf niet voldoende.
 
 De startmeetpunten zijn geen terugwerkende prijsgeschiedenis. Alleen wijzigingen aan productrecords vanaf installatie van de trigger worden automatisch vastgelegd. De trigger bezoekt geen aanbiederswebsites en haalt zelf geen actuele prijzen op.
 
@@ -106,3 +107,18 @@ Publieke product-, afbeelding- en aanbiederslinks worden alleen als externe link
 ## Bestaande maaltijden van afbeeldingen voorzien
 
 De beveiligde beheerpagina `/beheer/afbeeldingen` toont actieve producten van actieve, geverifieerde Nederlandse aanbieders waarvoor `image_url` nog leeg is. Een beheerder kan per bestaand product een HTTPS-afbeeldingslink invoeren, vooraf bekijken en afzonderlijk opslaan. De pagina controleert de ingelogde Supabase Auth-gebruiker tegen `public.admin_users`; de bestaande update-policy voor beheerders beschermt de databasewijziging. Er worden geen nieuwe producten aangemaakt en er worden geen afbeeldingen automatisch geraden of opgehaald. Gebruik bij voorkeur de exacte productafbeelding van de aanbieder en controleer de match handmatig. Het gaat om een afbeeldings-URL, niet om het uploaden van een lokaal bestand.
+
+
+## Grote catalogi en volledige gegevensophaal
+
+De homepage, aanbiederspagina, beheerdashboard, afbeeldingenbeheer en sitemap halen gegevens op in pagina's van maximaal 500 rijen. Hierdoor is de weergave niet afhankelijk van de standaardlimiet van één Supabase-query. De pagina's gebruiken een stabiele ID-volgorde en stoppen zodra een pagina minder dan 500 rijen bevat. Als een paginaquery mislukt, wordt de fout zichtbaar afgehandeld in plaats van een gedeeltelijke lijst als volledig te presenteren. Dit voorkomt dat grotere catalogi ongemerkt producten of aanbieders verbergen.
+
+
+## Extra betrouwbaarheid bij grote imports
+
+Ook de aanbiederslijst op de importpagina en de controles op bestaande productlinks worden gepagineerd opgehaald. Daardoor kan een bestaande dubbele productlink niet buiten de eerste API-resultatenpagina vallen. Lege invoer voor optionele numerieke velden en optionele datum-/tekstvelden wordt bij opslaan omgezet naar `null`, zodat lege tekst niet onbedoeld in een databasekolom voor getallen of datums terechtkomt. De afbeeldingsbeheerquery filtert producten zonder afbeelding al in de database, zodat onnodige productgegevens niet eerst naar de browser worden geladen. Bij een mislukte paginaophaal wordt de volledige dataset als mislukt behandeld.
+
+
+## Mobiele weergave van catalogus en beheer
+
+De homepage gebruikt geen vaste inline-kolombreedtes meer voor de filterkolom. Op schermen tot 600 px stapelen filters en resultaten onder elkaar, zodat de filters boven de resultaten staan en de productkaarten de beschikbare breedte benutten. De beheerfilters worden op smalle schermen één kolom; de dashboardtellers gebruiken twee compacte kolommen.

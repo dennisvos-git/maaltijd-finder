@@ -103,6 +103,15 @@ function validate(rows, existingRows = []) {
         (!Array.isArray(row.dietary_labels) || row.dietary_labels.some((v) => typeof v !== "string"))) {
       errors.push(`${prefix}: dietary_labels moet een lijst met tekstwaarden zijn.`);
     }
+    if (row.is_active !== undefined && typeof row.is_active !== "boolean") {
+      errors.push(`${prefix}: is_active moet true of false zijn.`);
+    }
+    for (const field of ["image_url", "ingredients", "meal_type", "preparation_method", "category"]) {
+      const value = row[field];
+      if (value !== undefined && value !== null && typeof value !== "string") {
+        errors.push(`${prefix}: '${field}' moet tekst of leeg zijn.`);
+      }
+    }
   });
   return { errors, warnings };
 }
@@ -140,6 +149,8 @@ function selfTest() {
   const invalidCheckDate = validate([{ ...valid, last_checked_at: "geen-datum" }]);
   const futureCheckDate = validate([{ ...valid, last_checked_at: "2099-01-01T12:00:00Z" }]);
   const nonObjectRow = validate([null]);
+  const invalidActiveFlag = validate([{ ...valid, is_active: "false" }]);
+  const invalidTextField = validate([{ ...valid, ingredients: ["rijst", "groente"] }]);
   if (validResult.errors.length || invalidResult.errors.length < 4 ||
       !duplicateResult.errors.some((e) => e.includes("bestaande catalogus")) ||
       !duplicateInFile.errors.some((e) => e.includes("dubbele combinatie")) ||
@@ -153,8 +164,10 @@ function selfTest() {
       !invalidImageUrl.errors.some((e) => e.includes("image_url")) ||
       !invalidCheckDate.errors.some((e) => e.includes("last_checked_at")) ||
       !futureCheckDate.warnings.some((w) => w.includes("in de toekomst")) ||
-      !nonObjectRow.errors.some((e) => e.includes("verwacht een object"))) {
-    console.error("Zelftest mislukt.", { validResult, invalidResult, duplicateResult, duplicateInFile, impossibleNutrition, suspiciousEnergy, invalidAvailability, invalidDietaryLabels, partialNutrition, suspiciousPrice, suspiciousWeight, invalidImageUrl, invalidCheckDate, futureCheckDate, nonObjectRow });
+      !nonObjectRow.errors.some((e) => e.includes("verwacht een object")) ||
+      !invalidActiveFlag.errors.some((e) => e.includes("is_active")) ||
+      !invalidTextField.errors.some((e) => e.includes("ingredients"))) {
+    console.error("Zelftest mislukt.", { validResult, invalidResult, duplicateResult, duplicateInFile, impossibleNutrition, suspiciousEnergy, invalidAvailability, invalidDietaryLabels, partialNutrition, suspiciousPrice, suspiciousWeight, invalidImageUrl, invalidCheckDate, futureCheckDate, nonObjectRow, invalidActiveFlag, invalidTextField });
     process.exitCode = 1;
     return;
   }

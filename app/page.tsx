@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { useEffect, useMemo, useState } from "react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
+import { fetchAllRows } from "../lib/fetch-all-rows";
 
 type Vendor = {
   name: string;
@@ -93,22 +94,27 @@ export default function Home() {
     let cancelled = false;
 
     async function loadProducts() {
-      if (!supabase) {
+      const db = supabase;
+      if (!db) {
         setLoading(false);
         return;
       }
 
-      const { data, error: queryError } = await supabase
-        .from("products")
-        .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors!inner(name, website_url, minimum_order_quantity, minimum_order_value, verification_status, country_code, is_active)")
-        .eq("is_active", true)
-        .eq("vendors.verification_status", "verified")
-        .eq("vendors.country_code", "NL")
-        .eq("vendors.is_active", true);
+      const { data, error: queryError } = await fetchAllRows(
+        (from, to) => db
+          .from("products")
+          .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors!inner(name, website_url, minimum_order_quantity, minimum_order_value, verification_status, country_code, is_active)")
+          .eq("is_active", true)
+          .eq("vendors.verification_status", "verified")
+          .eq("vendors.country_code", "NL")
+          .eq("vendors.is_active", true)
+          .order("id")
+          .range(from, to)
+      );
 
       if (cancelled) return;
       if (queryError) setError("De maaltijden konden niet worden opgehaald. Probeer het later opnieuw.");
-      else setProducts((data ?? []) as unknown as Product[]);
+      else setProducts(data as unknown as Product[]);
       setLoading(false);
     }
 
@@ -130,6 +136,21 @@ export default function Home() {
   );
 
   const incompleteCount = useMemo(() => products.filter((product) => missingData(product).length > 0).length, [products]);
+  const numericFilters = [
+    { label: "minimumprijs", value: minPrice, min: 0 },
+    { label: "maximumprijs", value: maxPrice, min: 0 },
+    { label: "minimumgewicht", value: minWeight, min: 1 },
+    { label: "maximumgewicht", value: maxWeight, min: 1 },
+  ];
+  const numericErrors = numericFilters.flatMap(({ label, value, min }) => {
+    if (value.trim() === "") return [];
+    const parsed = Number(value);
+    return !Number.isFinite(parsed) || parsed < min ? [`Vul een geldige ${label} in.`] : [];
+  });
+  const priceRangeInvalid = minPrice !== "" && maxPrice !== "" && Number.isFinite(Number(minPrice)) && Number.isFinite(Number(maxPrice)) && Number(minPrice) > Number(maxPrice);
+  const weightRangeInvalid = minWeight !== "" && maxWeight !== "" && Number.isFinite(Number(minWeight)) && Number.isFinite(Number(maxWeight)) && Number(minWeight) > Number(maxWeight);
+  const filterErrors = [...numericErrors, ...(priceRangeInvalid ? ["De minimumprijs mag niet hoger zijn dan de maximumprijs."] : []), ...(weightRangeInvalid ? ["Het minimumgewicht mag niet hoger zijn dan het maximumgewicht."] : [])];
+  const numericFiltersValid = filterErrors.length === 0;
 
   const visibleProducts = useMemo(() => {
     const term = search.trim().toLocaleLowerCase("nl-NL");
@@ -143,13 +164,15 @@ export default function Home() {
         && (dietaryLabel === "all" || (product.dietary_labels ?? []).includes(dietaryLabel))
         && (availability === "all" || product.availability === availability)
         && (dataStatus === "all" || (dataStatus === "incomplete" ? missingData(product).length > 0 : missingData(product).length === 0))
-        && (minPrice === "" || (product.price != null && product.price >= Number(minPrice)))
-        && (maxPrice === "" || (product.price != null && product.price <= Number(maxPrice)))
-        && (minWeight === "" || (product.weight_grams != null && product.weight_grams >= Number(minWeight)))
-        && (maxWeight === "" || (product.weight_grams != null && product.weight_grams <= Number(maxWeight)))
-        && (freshness === "all" || (freshness === "stale"
-          ? !hasReliableCheckDate(product.last_checked_at) || new Date(product.last_checked_at as string).getTime() < Date.now() - 30 * 24 * 60 * 60 * 1000
-          : hasReliableCheckDate(product.last_checked_at) && new Date(product.last_checked_at as string).getTime() >= Date.now() - 30 * 24 * 60 * 60 * 1000));
+        && (!numericFiltersValid || ((minPrice === "" || (product.price != null && product.price >= Number(minPrice)))
+          && (maxPrice === "" || (product.price != null && product.price <= Number(maxPrice)))
+          && (minWeight === "" || (product.weight_grams != null && product.weight_grams >= Number(minWeight)))
+          && (maxWeight === "" || (product.weight_grams != null && product.weight_grams <= Number(maxWeight)))))
+        && (freshness === "all" || (freshness === "invalid"
+          ? Boolean(product.last_checked_at) && !hasReliableCheckDate(product.last_checked_at)
+          : freshness === "stale"
+            ? !product.last_checked_at || (hasReliableCheckDate(product.last_checked_at) && new Date(product.last_checked_at as string).getTime() < Date.now() - 30 * 24 * 60 * 60 * 1000)
+            : hasReliableCheckDate(product.last_checked_at) && new Date(product.last_checked_at as string).getTime() >= Date.now() - 30 * 24 * 60 * 60 * 1000));
     });
 
     return filtered.sort((a, b) => {
@@ -209,8 +232,8 @@ export default function Home() {
 
           {!loading && products.length > 0 && <div className="catalog-data-summary"><p>{incompleteCount} van {products.length} maaltijden missen nog één of meer gegevens. Ontbrekende velden staan per maaltijd vermeld.</p><p>De volledigheidsscore telt 7 velden: prijs, gewicht, energie, eiwitten, koolhydraten, vetten en ingrediënten. Het is geen beoordeling van voedingskwaliteit.</p></div>}
 
-          <div className="catalog-layout" style={{ display: "grid", gridTemplateColumns: "260px minmax(0, 1fr)", gap: "24px", alignItems: "start", width: "100%" }}>
-            <aside className="filters" aria-label="Filters en sortering" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", alignSelf: "start", width: "100%" }}>
+          <div className="catalog-layout">
+            <aside className="filters" aria-label="Filters en sortering">
             <label>
               <span>Zoeken</span>
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Maaltijd of aanbieder…" />
@@ -274,9 +297,11 @@ export default function Home() {
               <select value={freshness} onChange={(event) => setFreshness(event.target.value)}>
                 <option value="all">Alle controledatums</option>
                 <option value="fresh">Gecontroleerd in 30 dagen</option>
-                <option value="stale">Ouder dan 30 dagen / onbekend</option>
+                <option value="stale">Ouder dan 30 dagen of ontbreekt</option>
+                <option value="invalid">Ongeldige of toekomstige datum</option>
               </select>
             </label>
+            {filterErrors.length > 0 && <div className="detail-muted" role="alert">{filterErrors.map((message) => <p key={message}>{message}</p>)}</div>}
             <label>
               <span>Sorteren op</span>
               <select value={sort} onChange={(event) => setSort(event.target.value)}>
@@ -357,6 +382,7 @@ export default function Home() {
                       <div className="product-tags">
                         {product.meal_type && <span className="tag">{product.meal_type}</span>}
                         {product.preparation_method && <span className="tag muted-tag">{product.preparation_method}</span>}
+                        <span className="tag muted-tag">{product.availability === "available" ? "Beschikbaar volgens aanbieder" : product.availability === "unavailable" ? "Niet beschikbaar volgens aanbieder" : "Beschikbaarheid onbekend"}</span>
                       </div>
                       <h3><Link href={`/maaltijd/${product.id}`}>{product.name}</Link></h3>
                       <p className="vendor-name">{vendor?.name ?? "Aanbieder onbekend"}</p>
@@ -377,7 +403,10 @@ export default function Home() {
                         <div className="product-card-links"><Link className="product-link" href={`/maaltijd/${product.id}`}>Details bekijken →</Link>{safeExternalUrl(product.product_url) ? <a className="product-link" href={safeExternalUrl(product.product_url)!} target="_blank" rel="noopener noreferrer">Aanbieder ↗</a> : <span className="detail-muted">Aanbiederslink niet beschikbaar</span>}</div>
                       </div>
                       {vendor?.minimum_order_quantity != null && (
-                        <p className="delivery-note">Minimale bestelling: {vendor.minimum_order_quantity} maaltijden</p>
+                        <p className="delivery-note">Minimale bestelling bij aanbieder: {vendor.minimum_order_quantity} maaltijden</p>
+                      )}
+                      {vendor?.minimum_order_value != null && (
+                        <p className="delivery-note">Minimale bestelwaarde bij aanbieder: {euro(vendor.minimum_order_value)}</p>
                       )}
                       {!hasReliableCheckDate(product.last_checked_at)
                         ? <p className="checked-note">Controledatum ontbreekt of moet worden nagekeken</p>

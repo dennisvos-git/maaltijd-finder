@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { isSupabaseConfigured, supabase } from "../../lib/supabase";
+import { fetchAllRows } from "../../lib/fetch-all-rows";
 
 type Product = {
   id: string;
@@ -75,6 +76,7 @@ export default function AdminOverviewPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [vendorError, setVendorError] = useState("");
   const [query, setQuery] = useState("");
   const [view, setView] = useState("all");
   const [vendorFilter, setVendorFilter] = useState("all");
@@ -83,25 +85,35 @@ export default function AdminOverviewPage() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      if (!supabase) { setLoading(false); return; }
+      const db = supabase;
+      if (!db) { setLoading(false); return; }
       const [productResult, vendorResult] = await Promise.all([
-        supabase.from("products")
-          .select("id, name, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, last_checked_at, product_url, image_url, vendors!inner(name, verification_status, country_code, is_active)")
-          .eq("is_active", true)
-          .eq("vendors.verification_status", "verified")
-          .eq("vendors.country_code", "NL")
-          .eq("vendors.is_active", true)
-          .order("name"),
-        supabase.from("vendors")
-          .select("id, name, website_url, verification_status, country_code, is_active, last_checked_at, scan_enabled")
-          .order("name"),
+        fetchAllRows(
+          (from, to) => db.from("products")
+            .select("id, name, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, last_checked_at, product_url, image_url, vendors!inner(name, verification_status, country_code, is_active)")
+            .eq("is_active", true)
+            .eq("vendors.verification_status", "verified")
+            .eq("vendors.country_code", "NL")
+            .eq("vendors.is_active", true)
+            .order("name")
+            .order("id")
+            .range(from, to)
+        ),
+        fetchAllRows(
+          (from, to) => db.from("vendors")
+            .select("id, name, website_url, verification_status, country_code, is_active, last_checked_at, scan_enabled")
+            .order("name")
+            .order("id")
+            .range(from, to)
+        ),
       ]);
       if (cancelled) return;
-      if (productResult.error || vendorResult.error) setError("De gegevens konden niet volledig worden opgehaald.");
-      else {
-        setProducts((productResult.data ?? []) as unknown as Product[]);
-        setVendors((vendorResult.data ?? []) as Vendor[]);
-      }
+      const errors: string[] = [];
+      if (productResult.error) errors.push("De maaltijden konden niet worden opgehaald.");
+      else setProducts((productResult.data ?? []) as unknown as Product[]);
+      if (vendorResult.error) setVendorError("De aanbieders konden niet worden opgehaald.");
+      else setVendors((vendorResult.data ?? []) as Vendor[]);
+      setError(errors.length && productResult.error ? errors[0] : "");
       setLoading(false);
     }
     void load();
@@ -186,7 +198,7 @@ export default function AdminOverviewPage() {
         <div className="catalog-heading"><p className="detail-muted" aria-live="polite">{loading ? "Resultaten laden…" : `${filtered.length} producten in deze selectie`}</p><button className="admin-secondary" type="button" onClick={exportFilteredCsv} disabled={loading || filtered.length === 0}>Exporteer selectie als CSV</button></div>
         {!isSupabaseConfigured && <div className="empty-state"><h2>Database niet ingesteld</h2></div>}
         {loading && <p className="loading-message">Overzicht ophalen…</p>}
-        {error && <div className="empty-state"><p>{error}</p></div>}
+        {error && <div className="empty-state" role="alert"><p>{error}</p></div>}{vendorError && <p className="detail-muted" role="alert">{vendorError} De productcontrole blijft wel beschikbaar.</p>}
         {!loading && !error && filtered.length === 0 && <div className="empty-state"><p>Geen producten gevonden voor deze selectie.</p></div>}
         {!loading && !error && filtered.length > 0 && <div className="admin-table-wrap"><table className="admin-table">
           <thead><tr><th>Prioriteit</th><th>Maaltijd</th><th>Aanbieder</th><th>Prijs</th><th>Ontbreekt</th><th>Laatste controle</th><th>Bron</th></tr></thead>
