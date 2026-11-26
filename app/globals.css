@@ -201,3 +201,5 @@ a { text-underline-offset: 3px; }
 .filters-reset:hover { border-color: var(--green); background: var(--green-soft); }
 @media (max-width: 760px) { .filters-reset { grid-column: 1 / -1; } }
 @media (max-width: 600px) { .filters-reset { grid-column: auto; } }
+.catalog-data-summary p { margin: 0 0 5px; }
+.catalog-data-summary p:last-child { color: #64748b; font-size: 11px; }
