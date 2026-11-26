@@ -363,6 +363,7 @@ export default function Home() {
                       <div className="product-tags">
                         {product.meal_type && <span className="tag">{product.meal_type}</span>}
                         {product.preparation_method && <span className="tag muted-tag">{product.preparation_method}</span>}
+                        <span className="tag muted-tag">{product.availability === "available" ? "Beschikbaar volgens aanbieder" : product.availability === "unavailable" ? "Niet beschikbaar volgens aanbieder" : "Beschikbaarheid onbekend"}</span>
                       </div>
                       <h3><Link href={`/maaltijd/${product.id}`}>{product.name}</Link></h3>
                       <p className="vendor-name">{vendor?.name ?? "Aanbieder onbekend"}</p>
@@ -383,7 +384,10 @@ export default function Home() {
                         <div className="product-card-links"><Link className="product-link" href={`/maaltijd/${product.id}`}>Details bekijken →</Link>{safeExternalUrl(product.product_url) ? <a className="product-link" href={safeExternalUrl(product.product_url)!} target="_blank" rel="noopener noreferrer">Aanbieder ↗</a> : <span className="detail-muted">Aanbiederslink niet beschikbaar</span>}</div>
                       </div>
                       {vendor?.minimum_order_quantity != null && (
-                        <p className="delivery-note">Minimale bestelling: {vendor.minimum_order_quantity} maaltijden</p>
+                        <p className="delivery-note">Minimale bestelling bij aanbieder: {vendor.minimum_order_quantity} maaltijden</p>
+                      )}
+                      {vendor?.minimum_order_value != null && (
+                        <p className="delivery-note">Minimale bestelwaarde bij aanbieder: {euro(vendor.minimum_order_value)}</p>
                       )}
                       {!hasReliableCheckDate(product.last_checked_at)
                         ? <p className="checked-note">Controledatum ontbreekt of moet worden nagekeken</p>
