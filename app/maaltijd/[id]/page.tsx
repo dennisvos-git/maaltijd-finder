@@ -37,6 +37,11 @@ const dataFields = [
 const euro = (value: number) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
 const number = (value: number | null, suffix: string) => value == null ? "Niet opgegeven" : `${new Intl.NumberFormat("nl-NL", { maximumFractionDigits: 2 }).format(value)} ${suffix}`;
 const perPortion = (value: number | null, weightGrams: number | null) => value == null || weightGrams == null ? null : value * weightGrams / 100;
+const hasReliableCheckDate = (value: string | null) => {
+  if (!value) return false;
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp) && timestamp <= Date.now();
+};
 
 export default function MealDetailPage() {
   const params = useParams<{ id: string }>();
@@ -116,7 +121,9 @@ export default function MealDetailPage() {
               {vendor?.minimum_order_quantity != null && <p className="delivery-note">Minimale bestelling bij deze aanbieder: {vendor.minimum_order_quantity} maaltijden</p>}
               {vendor?.minimum_order_value != null && <p className="delivery-note">Minimale bestelwaarde bij deze aanbieder: {euro(vendor.minimum_order_value)}</p>}
               {vendor?.delivery_info && <p className="detail-delivery">{vendor.delivery_info}</p>}
-              {meal.last_checked_at && <p className="checked-note">Productinformatie gecontroleerd: {new Date(meal.last_checked_at).toLocaleDateString("nl-NL")}</p>}
+              {!hasReliableCheckDate(meal.last_checked_at)
+                ? <p className="checked-note">Controledatum ontbreekt of moet worden nagekeken.</p>
+                : <p className="checked-note">Productinformatie gecontroleerd: {new Date(meal.last_checked_at as string).toLocaleDateString("nl-NL")}</p>}
             </div>
             <div className="meal-detail-sections">
               <section className="detail-panel completeness-panel">
