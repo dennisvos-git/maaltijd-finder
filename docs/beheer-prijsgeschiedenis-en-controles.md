@@ -84,3 +84,6 @@ De JSON-import controleert verplichte tekstvelden op lege waarden, product-, bro
 ## Extra datumcontrole bij import
 
 Een geldige `last_checked_at`-datum die meer dan vijf minuten in de toekomst ligt, geeft nu een waarschuwing in zowel de beheerpreview als de zelfstandige importvalidator. De import blijft mogelijk na handmatige controle; kleine tijdsverschillen door klok- of tijdzone-instellingen worden hiermee niet direct als harde fout behandeld. De zelftest bevat ook een scenario voor een toekomstige controledatum.
+
+
+De importpagina toont waarschuwingen en afkeurpunten nu als afzonderlijke, getelde overzichten. De waarschuwingen zijn via een live status toegankelijk; fouten krijgen een dringender schermlezermelding. Bij afkeuring wordt expliciet vermeld dat er niets is opgeslagen.
