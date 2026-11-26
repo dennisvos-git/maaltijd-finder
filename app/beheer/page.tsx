@@ -103,7 +103,7 @@ export default function AdminOverviewPage() {
     const missing = fields.some(([key]) => isMissing(p[key]));
     const productVendor = Array.isArray(p.vendors) ? p.vendors[0]?.name : p.vendors?.name;
     const matchesVendor = vendorFilter === "all" || productVendor === vendorFilter;
-    return matches && matchesVendor && (view === "all" || (view === "missing" && missing) || (view === "stale" && !!p.last_checked_at && old(p.last_checked_at)) || (view === "never" && !p.last_checked_at) || (view === "invalid" && Boolean(p.last_checked_at) && !validDate(p.last_checked_at)) || (view === "no-image" && isMissing(p.image_url)));
+    return matches && matchesVendor && (view === "all" || (view === "missing" && missing) || (view === "stale" && !!p.last_checked_at && old(p.last_checked_at)) || (view === "never" && !p.last_checked_at) || (view === "invalid" && Boolean(p.last_checked_at) && !validDate(p.last_checked_at)) || (view === "no-image" && isMissing(p.image_url)) || (view === "bad-link" && !safeExternalUrl(p.product_url)));
   }).sort((a, b) => {
     if (sort === "oldest") return (validDate(a.last_checked_at) ? new Date(a.last_checked_at as string).getTime() : 0) - (validDate(b.last_checked_at) ? new Date(b.last_checked_at as string).getTime() : 0);
     if (sort === "price-low") return (a.price ?? Number.POSITIVE_INFINITY) - (b.price ?? Number.POSITIVE_INFINITY);
@@ -144,13 +144,14 @@ export default function AdminOverviewPage() {
         <article className="detail-panel"><span>Ongeldige controledatum</span><strong>{loading ? "…" : invalidDate.length}</strong></article>
         <article className="detail-panel"><span>Aanbieders geregistreerd</span><strong>{loading ? "…" : vendors.length}</strong></article>
         <article className="detail-panel"><span>Maaltijden zonder foto</span><strong>{loading ? "…" : products.filter(p => !p.image_url || !p.image_url.trim()).length}</strong></article>
+        <article className="detail-panel"><span>Ongeldige of ontbrekende productlink</span><strong>{loading ? "…" : products.filter(p => !safeExternalUrl(p.product_url)).length}</strong></article>
       </section>
       <section className="catalog">
         <div className="catalog-heading"><div><div className="eyebrow">Productkwaliteit</div><h2>Aandacht nodig</h2></div></div>
         <div className="admin-controls">
           <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Zoek maaltijd of aanbieder…" aria-label="Zoek maaltijd of aanbieder" />
           <select value={view} onChange={e => setView(e.target.value)} aria-label="Filter productgegevens">
-            <option value="all">Alle maaltijden</option><option value="missing">Ontbrekende gegevens</option><option value="stale">Ouder dan 30 dagen</option><option value="never">Nooit gecontroleerd</option><option value="invalid">Ongeldige controledatum</option><option value="no-image">Geen afbeelding</option>
+            <option value="all">Alle maaltijden</option><option value="missing">Ontbrekende gegevens</option><option value="stale">Ouder dan 30 dagen</option><option value="never">Nooit gecontroleerd</option><option value="invalid">Ongeldige controledatum</option><option value="no-image">Geen afbeelding</option><option value="bad-link">Ongeldige of ontbrekende productlink</option>
           </select>
           <select value={vendorFilter} onChange={e => setVendorFilter(e.target.value)} aria-label="Filter op aanbieder">
             <option value="all">Alle aanbieders</option>
