@@ -69,6 +69,7 @@ function validate(rows, existingRows = []) {
       seen.add(key);
     }
     if (row.last_checked_at !== undefined && row.last_checked_at !== null && row.last_checked_at !== "" && (typeof row.last_checked_at !== "string" || !Number.isFinite(Date.parse(row.last_checked_at)))) errors.push(`${prefix}: last_checked_at moet leeg zijn of een geldige datum bevatten.`);
+    if (typeof row.last_checked_at === "string" && Number.isFinite(Date.parse(row.last_checked_at)) && Date.parse(row.last_checked_at) > Date.now() + 5 * 60 * 1000) warnings.push(`${prefix}: last_checked_at ligt in de toekomst; controleer de datum en tijdzone.`);
     for (const [field, min, max] of numericFields) {
       const value = row[field];
       if (value !== undefined && value !== null && value !== "") {
@@ -137,6 +138,7 @@ function selfTest() {
   const suspiciousWeight = validate([{ ...valid, weight_grams: 4000 }]);
   const invalidImageUrl = validate([{ ...valid, image_url: "javascript:alert(1)" }]);
   const invalidCheckDate = validate([{ ...valid, last_checked_at: "geen-datum" }]);
+  const futureCheckDate = validate([{ ...valid, last_checked_at: "2099-01-01T12:00:00Z" }]);
   const nonObjectRow = validate([null]);
   if (validResult.errors.length || invalidResult.errors.length < 4 ||
       !duplicateResult.errors.some((e) => e.includes("bestaande catalogus")) ||
@@ -150,12 +152,13 @@ function selfTest() {
       !suspiciousWeight.warnings.some((w) => w.includes("gewicht is hoger")) ||
       !invalidImageUrl.errors.some((e) => e.includes("image_url")) ||
       !invalidCheckDate.errors.some((e) => e.includes("last_checked_at")) ||
+      !futureCheckDate.warnings.some((w) => w.includes("in de toekomst")) ||
       !nonObjectRow.errors.some((e) => e.includes("verwacht een object"))) {
-    console.error("Zelftest mislukt.", { validResult, invalidResult, duplicateResult, duplicateInFile, impossibleNutrition, suspiciousEnergy, invalidAvailability, invalidDietaryLabels, partialNutrition, suspiciousPrice, suspiciousWeight, invalidImageUrl, invalidCheckDate, nonObjectRow });
+    console.error("Zelftest mislukt.", { validResult, invalidResult, duplicateResult, duplicateInFile, impossibleNutrition, suspiciousEnergy, invalidAvailability, invalidDietaryLabels, partialNutrition, suspiciousPrice, suspiciousWeight, invalidImageUrl, invalidCheckDate, futureCheckDate, nonObjectRow });
     process.exitCode = 1;
     return;
   }
-  console.log("Zelftest geslaagd: lege en gedeeltelijke voedingswaarden, aanbiederstatus, dubbele producten, ongeldige invoer en voedingswaardelogica gecontroleerd.");
+  console.log("Zelftest geslaagd: lege en gedeeltelijke voedingswaarden, aanbiederstatus, dubbele producten, ongeldige en toekomstige controledatums, ongeldige invoer en voedingswaardelogica gecontroleerd.");
 }
 
 async function main() {
