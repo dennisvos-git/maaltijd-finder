@@ -49,6 +49,7 @@ const safeExternalUrl = (value: string | null | undefined) => {
   }
 };
 const euro = (value: number | null) => value == null ? "Onbekend" : new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
+const csvCell = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
 export default function AdminOverviewPage() {
   const [products, setProducts] = useState<Product[]>([]);
