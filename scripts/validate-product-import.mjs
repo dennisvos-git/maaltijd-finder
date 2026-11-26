@@ -52,11 +52,11 @@ function validate(rows, existingRows = []) {
     if (row.vendor_is_active !== true) {
       errors.push(`${prefix}: aanbieder moet actief zijn.`);
     }
-    for (const field of ["product_url", "source_reference"]) {
+    for (const field of ["product_url", "source_reference", "image_url"]) {
       if (typeof row[field] === "string" && row[field].trim()) {
         try {
           const url = new URL(row[field]);
-          if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error();
+          if ((url.protocol !== "https:" && url.protocol !== "http:") || !url.hostname) throw new Error();
         } catch {
           errors.push(`${prefix}: '${field}' moet een geldige http(s)-link zijn.`);
         }
@@ -68,6 +68,7 @@ function validate(rows, existingRows = []) {
       if (existing.has(key)) errors.push(`${prefix}: dit product staat met dezelfde aanbieder en link al in de bestaande catalogus.`);
       seen.add(key);
     }
+    if (row.last_checked_at !== undefined && row.last_checked_at !== null && row.last_checked_at !== "" && (typeof row.last_checked_at !== "string" || !Number.isFinite(Date.parse(row.last_checked_at)))) errors.push(`${prefix}: last_checked_at moet leeg zijn of een geldige datum bevatten.`);
     for (const [field, min, max] of numericFields) {
       const value = row[field];
       if (value !== undefined && value !== null && value !== "") {
@@ -76,6 +77,8 @@ function validate(rows, existingRows = []) {
         }
       }
     }
+    if (row.price === 0) warnings.push(`${prefix}: prijs is € 0; controleer of dit geen ontbrekende of verkeerd overgenomen prijs is.`);
+    if (typeof row.weight_grams === "number" && row.weight_grams > 3000) warnings.push(`${prefix}: gewicht is hoger dan 3 kg; controleer de verpakkingseenheid.`);
     const macros = [row.protein_per_100g, row.carbohydrates_per_100g, row.fat_per_100g];
     if (macros.every((value) => typeof value === "number" && Number.isFinite(value))) {
       const macroTotal = macros.reduce((sum, value) => sum + value, 0);
