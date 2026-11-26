@@ -107,11 +107,12 @@ export default function AdminOverviewPage() {
         ),
       ]);
       if (cancelled) return;
-      if (productResult.error || vendorResult.error) setError("De gegevens konden niet volledig worden opgehaald.");
-      else {
-        setProducts((productResult.data ?? []) as unknown as Product[]);
-        setVendors((vendorResult.data ?? []) as Vendor[]);
-      }
+      const errors: string[] = [];
+      if (productResult.error) errors.push("De maaltijden konden niet worden opgehaald.");
+      else setProducts((productResult.data ?? []) as unknown as Product[]);
+      if (vendorResult.error) errors.push("De aanbieders konden niet worden opgehaald.");
+      else setVendors((vendorResult.data ?? []) as Vendor[]);
+      setError(errors.join(" "));
       setLoading(false);
     }
     void load();
@@ -196,7 +197,7 @@ export default function AdminOverviewPage() {
         <div className="catalog-heading"><p className="detail-muted" aria-live="polite">{loading ? "Resultaten laden…" : `${filtered.length} producten in deze selectie`}</p><button className="admin-secondary" type="button" onClick={exportFilteredCsv} disabled={loading || filtered.length === 0}>Exporteer selectie als CSV</button></div>
         {!isSupabaseConfigured && <div className="empty-state"><h2>Database niet ingesteld</h2></div>}
         {loading && <p className="loading-message">Overzicht ophalen…</p>}
-        {error && <div className="empty-state"><p>{error}</p></div>}
+        {error && <div className="empty-state" role="alert"><p>{error}</p><p>De gegevens die wel beschikbaar zijn, blijven afzonderlijk zichtbaar.</p></div>}
         {!loading && !error && filtered.length === 0 && <div className="empty-state"><p>Geen producten gevonden voor deze selectie.</p></div>}
         {!loading && !error && filtered.length > 0 && <div className="admin-table-wrap"><table className="admin-table">
           <thead><tr><th>Prioriteit</th><th>Maaltijd</th><th>Aanbieder</th><th>Prijs</th><th>Ontbreekt</th><th>Laatste controle</th><th>Bron</th></tr></thead>
