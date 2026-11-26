@@ -76,6 +76,7 @@ export default function AdminOverviewPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [vendorError, setVendorError] = useState("");
   const [query, setQuery] = useState("");
   const [view, setView] = useState("all");
   const [vendorFilter, setVendorFilter] = useState("all");
@@ -110,9 +111,9 @@ export default function AdminOverviewPage() {
       const errors: string[] = [];
       if (productResult.error) errors.push("De maaltijden konden niet worden opgehaald.");
       else setProducts((productResult.data ?? []) as unknown as Product[]);
-      if (vendorResult.error) errors.push("De aanbieders konden niet worden opgehaald.");
+      if (vendorResult.error) setVendorError("De aanbieders konden niet worden opgehaald.");
       else setVendors((vendorResult.data ?? []) as Vendor[]);
-      setError(errors.join(" "));
+      setError(errors.length && productResult.error ? errors[0] : "");
       setLoading(false);
     }
     void load();
@@ -197,7 +198,7 @@ export default function AdminOverviewPage() {
         <div className="catalog-heading"><p className="detail-muted" aria-live="polite">{loading ? "Resultaten laden…" : `${filtered.length} producten in deze selectie`}</p><button className="admin-secondary" type="button" onClick={exportFilteredCsv} disabled={loading || filtered.length === 0}>Exporteer selectie als CSV</button></div>
         {!isSupabaseConfigured && <div className="empty-state"><h2>Database niet ingesteld</h2></div>}
         {loading && <p className="loading-message">Overzicht ophalen…</p>}
-        {error && <div className="empty-state" role="alert"><p>{error}</p><p>De gegevens die wel beschikbaar zijn, blijven afzonderlijk zichtbaar.</p></div>}
+        {error && <div className="empty-state" role="alert"><p>{error}</p></div>}{vendorError && <p className="detail-muted" role="alert">{vendorError} De productcontrole blijft wel beschikbaar.</p>}
         {!loading && !error && filtered.length === 0 && <div className="empty-state"><p>Geen producten gevonden voor deze selectie.</p></div>}
         {!loading && !error && filtered.length > 0 && <div className="admin-table-wrap"><table className="admin-table">
           <thead><tr><th>Prioriteit</th><th>Maaltijd</th><th>Aanbieder</th><th>Prijs</th><th>Ontbreekt</th><th>Laatste controle</th><th>Bron</th></tr></thead>
