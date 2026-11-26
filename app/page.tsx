@@ -136,6 +136,21 @@ export default function Home() {
   );
 
   const incompleteCount = useMemo(() => products.filter((product) => missingData(product).length > 0).length, [products]);
+  const numericFilters = [
+    { label: "minimumprijs", value: minPrice, min: 0 },
+    { label: "maximumprijs", value: maxPrice, min: 0 },
+    { label: "minimumgewicht", value: minWeight, min: 1 },
+    { label: "maximumgewicht", value: maxWeight, min: 1 },
+  ];
+  const numericErrors = numericFilters.flatMap(({ label, value, min }) => {
+    if (value.trim() === "") return [];
+    const parsed = Number(value);
+    return !Number.isFinite(parsed) || parsed < min ? [`Vul een geldige ${label} in.`] : [];
+  });
+  const priceRangeInvalid = minPrice !== "" && maxPrice !== "" && Number.isFinite(Number(minPrice)) && Number.isFinite(Number(maxPrice)) && Number(minPrice) > Number(maxPrice);
+  const weightRangeInvalid = minWeight !== "" && maxWeight !== "" && Number.isFinite(Number(minWeight)) && Number.isFinite(Number(maxWeight)) && Number(minWeight) > Number(maxWeight);
+  const filterErrors = [...numericErrors, ...(priceRangeInvalid ? ["De minimumprijs mag niet hoger zijn dan de maximumprijs."] : []), ...(weightRangeInvalid ? ["Het minimumgewicht mag niet hoger zijn dan het maximumgewicht."] : [])];
+  const numericFiltersValid = filterErrors.length === 0;
 
   const visibleProducts = useMemo(() => {
     const term = search.trim().toLocaleLowerCase("nl-NL");
@@ -149,13 +164,15 @@ export default function Home() {
         && (dietaryLabel === "all" || (product.dietary_labels ?? []).includes(dietaryLabel))
         && (availability === "all" || product.availability === availability)
         && (dataStatus === "all" || (dataStatus === "incomplete" ? missingData(product).length > 0 : missingData(product).length === 0))
-        && (minPrice === "" || (product.price != null && product.price >= Number(minPrice)))
-        && (maxPrice === "" || (product.price != null && product.price <= Number(maxPrice)))
-        && (minWeight === "" || (product.weight_grams != null && product.weight_grams >= Number(minWeight)))
-        && (maxWeight === "" || (product.weight_grams != null && product.weight_grams <= Number(maxWeight)))
-        && (freshness === "all" || (freshness === "stale"
-          ? !hasReliableCheckDate(product.last_checked_at) || new Date(product.last_checked_at as string).getTime() < Date.now() - 30 * 24 * 60 * 60 * 1000
-          : hasReliableCheckDate(product.last_checked_at) && new Date(product.last_checked_at as string).getTime() >= Date.now() - 30 * 24 * 60 * 60 * 1000));
+        && (!numericFiltersValid || ((minPrice === "" || (product.price != null && product.price >= Number(minPrice)))
+          && (maxPrice === "" || (product.price != null && product.price <= Number(maxPrice)))
+          && (minWeight === "" || (product.weight_grams != null && product.weight_grams >= Number(minWeight)))
+          && (maxWeight === "" || (product.weight_grams != null && product.weight_grams <= Number(maxWeight)))))
+        && (freshness === "all" || (freshness === "invalid"
+          ? Boolean(product.last_checked_at) && !hasReliableCheckDate(product.last_checked_at)
+          : freshness === "stale"
+            ? !product.last_checked_at || (hasReliableCheckDate(product.last_checked_at) && new Date(product.last_checked_at as string).getTime() < Date.now() - 30 * 24 * 60 * 60 * 1000)
+            : hasReliableCheckDate(product.last_checked_at) && new Date(product.last_checked_at as string).getTime() >= Date.now() - 30 * 24 * 60 * 60 * 1000));
     });
 
     return filtered.sort((a, b) => {
@@ -280,9 +297,11 @@ export default function Home() {
               <select value={freshness} onChange={(event) => setFreshness(event.target.value)}>
                 <option value="all">Alle controledatums</option>
                 <option value="fresh">Gecontroleerd in 30 dagen</option>
-                <option value="stale">Ouder dan 30 dagen / onbekend</option>
+                <option value="stale">Ouder dan 30 dagen of ontbreekt</option>
+                <option value="invalid">Ongeldige of toekomstige datum</option>
               </select>
             </label>
+            {filterErrors.length > 0 && <div className="detail-muted" role="alert">{filterErrors.map((message) => <p key={message}>{message}</p>)}</div>}
             <label>
               <span>Sorteren op</span>
               <select value={sort} onChange={(event) => setSort(event.target.value)}>
