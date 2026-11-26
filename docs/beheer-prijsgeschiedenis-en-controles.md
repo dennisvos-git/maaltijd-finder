@@ -92,3 +92,6 @@ De importpagina toont waarschuwingen en afkeurpunten nu als afzonderlijke, getel
 ## Controledatums op bezoekerspagina's
 
 De openbare catalogus en productdetailpagina tonen geen misleidende datum wanneer `last_checked_at` ontbreekt, ongeldig is of in de toekomst ligt. Zulke producten vallen bij de actualiteitsfilter onder 'Ouder dan 30 dagen / onbekend' en krijgen een melding dat de controledatum moet worden nagekeken. Alleen een geldige datum die niet in de toekomst ligt, telt als gecontroleerd; dit blijft een administratieve datum en geen bewijs van een automatische websitecontrole.
+
+
+Bij een import met waarschuwingen moet de beheerder in de preview expliciet aanvinken dat alle waarschuwingen aan de hand van de brongegevens zijn gecontroleerd. Zonder die bevestiging blijft de importknop uitgeschakeld. Het aanpassen van de JSON of annuleren van de preview wist deze bevestiging.
