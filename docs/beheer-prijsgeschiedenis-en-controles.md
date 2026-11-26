@@ -72,3 +72,5 @@ Deze technische vindbaarheidsverbeteringen zijn geen garantie op hogere posities
 
 ## Onderscheid in controledatums
 Het beheerdashboard telt producten zonder controledatum apart van producten waarvan de laatste controledatum ouder is dan 30 dagen. De tegel 'Ouder dan 30 dagen' telt dus geen ontbrekende datums mee; 'Nooit gecontroleerd' doet dat afzonderlijk. Dezelfde whitespace-controle voor ontbrekende tekstvelden wordt gebruikt bij de volledigheidscontrole in het dashboard. Een datumstatus is uitsluitend een administratief signaal en bewijst niet dat de aanbiederwebsite is gecontroleerd.
+
+Ook ongeldige, niet-parseerbare controledatums worden apart geteld en zijn via een eigen dashboardfilter terug te vinden. Zo vallen corrupte datumwaarden niet stilzwijgend buiten zowel 'nooit gecontroleerd' als 'ouder dan 30 dagen'. De datum wordt als ongeldig getoond en vraagt om handmatige correctie; dit is geen automatische broncontrole.
