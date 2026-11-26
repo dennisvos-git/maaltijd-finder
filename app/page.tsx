@@ -196,9 +196,17 @@ export default function Home() {
             Vergelijk kant-en-klaarmaaltijden op prijs, gewicht, voedingswaarden en aanbieder.
             Alle maaltijden overzichtelijk op één plek.
           </p>
+          <div className="hero-search-wrap">
+            <label className="hero-search">
+              <span className="sr-only">Zoek maaltijd of aanbieder</span>
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Zoek een maaltijd of aanbieder…" />
+            </label>
+            {search.trim() && <button type="button" className="hero-search-clear" onClick={() => setSearch("")}>Wis zoekopdracht</button>}
+          </div>
+          <p className="hero-note">Vergelijk individuele maaltijden van gecontroleerde Nederlandse aanbieders. Je bestelt rechtstreeks bij de aanbieder.</p>
         </section>
 
-        <section className="catalog" aria-label="Maaltijdencatalogus">
+        <section className="catalog" id="catalog" aria-label="Maaltijdencatalogus">
           <div className="catalog-heading">
             <div>
               <div className="eyebrow">Het aanbod</div>
@@ -211,10 +219,6 @@ export default function Home() {
 
           <div className="catalog-layout" style={{ display: "grid", gridTemplateColumns: "260px minmax(0, 1fr)", gap: "24px", alignItems: "start", width: "100%" }}>
             <aside className="filters" aria-label="Filters en sortering" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", alignSelf: "start", width: "100%" }}>
-            <label className="search-field">
-              <span>Zoeken</span>
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Zoek op maaltijd of aanbieder…" />
-            </label>
             <label>
               <span>Soort maaltijd</span>
               <select value={mealType} onChange={(event) => setMealType(event.target.value)}>

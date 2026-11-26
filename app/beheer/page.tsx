@@ -51,7 +51,7 @@ const safeExternalUrl = (value: string | null | undefined) => {
 const euro = (value: number | null) => value == null ? "Onbekend" : new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
 const csvCell = (value: unknown) => {
   const text = String(value ?? "");
-  const safe = /^[=+@-]/.test(text) ? "'" + text : text;
+  const safe = /^[\uFEFF\s]*[=+@-]/.test(text) ? "'" + text : text;
   return `"${safe.replace(/"/g, '""')}"`;
 };
 
@@ -61,6 +61,7 @@ const checkPriority = (p: Product): CheckPriority => {
   if (!safeExternalUrl(p.product_url)) reasons.push("productlink ontbreekt of is ongeldig");
   if (isMissing(p.price)) reasons.push("prijs ontbreekt");
   if (reasons.length) return { rank: 0, label: "Hoog", reason: reasons.join("; ") };
+  if (p.price === 0) reasons.push("prijs is € 0; controleer of dit klopt");
   if (!validDate(p.last_checked_at)) reasons.push("controledatum ontbreekt of is ongeldig");
   else if (old(p.last_checked_at)) reasons.push("langer dan 30 dagen niet gecontroleerd");
   if (isMissing(p.image_url)) reasons.push("afbeelding ontbreekt");
@@ -142,7 +143,7 @@ export default function AdminOverviewPage() {
     document.body.appendChild(link);
     link.click();
     link.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   return <>
