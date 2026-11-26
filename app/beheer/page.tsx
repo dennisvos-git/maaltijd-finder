@@ -111,13 +111,14 @@ export default function AdminOverviewPage() {
   const stale = products.filter(p => old(p.last_checked_at));
   const neverChecked = products.filter(p => !p.last_checked_at);
   const invalidDate = products.filter(p => Boolean(p.last_checked_at) && !validDate(p.last_checked_at));
+  const highPriority = products.filter(p => checkPriority(p).rank === 0);
   const filtered = useMemo(() => products.filter(p => {
     const term = query.trim().toLocaleLowerCase("nl-NL");
     const matches = !term || [p.name, vendorName(p)].some(v => v.toLocaleLowerCase("nl-NL").includes(term));
     const missing = fields.some(([key]) => isMissing(p[key]));
     const productVendor = Array.isArray(p.vendors) ? p.vendors[0]?.name : p.vendors?.name;
     const matchesVendor = vendorFilter === "all" || productVendor === vendorFilter;
-    return matches && matchesVendor && (view === "all" || (view === "missing" && missing) || (view === "stale" && !!p.last_checked_at && old(p.last_checked_at)) || (view === "never" && !p.last_checked_at) || (view === "invalid" && Boolean(p.last_checked_at) && !validDate(p.last_checked_at)) || (view === "no-image" && isMissing(p.image_url)) || (view === "bad-link" && !safeExternalUrl(p.product_url)));
+    return matches && matchesVendor && (view === "all" || (view === "missing" && missing) || (view === "stale" && !!p.last_checked_at && old(p.last_checked_at)) || (view === "never" && !p.last_checked_at) || (view === "invalid" && Boolean(p.last_checked_at) && !validDate(p.last_checked_at)) || (view === "no-image" && isMissing(p.image_url)) || (view === "bad-link" && !safeExternalUrl(p.product_url)) || (view === "priority" && checkPriority(p).rank === 0));
   }).sort((a, b) => {
     if (sort === "priority") {
       const priorityDifference = checkPriority(a).rank - checkPriority(b).rank;
@@ -164,13 +165,14 @@ export default function AdminOverviewPage() {
         <article className="detail-panel"><span>Aanbieders geregistreerd</span><strong>{loading ? "…" : vendors.length}</strong></article>
         <article className="detail-panel"><span>Maaltijden zonder foto</span><strong>{loading ? "…" : products.filter(p => !p.image_url || !p.image_url.trim()).length}</strong></article>
         <article className="detail-panel"><span>Ongeldige of ontbrekende productlink</span><strong>{loading ? "…" : products.filter(p => !safeExternalUrl(p.product_url)).length}</strong></article>
+        <article className="detail-panel"><span>Hoge controleprioriteit</span><strong>{loading ? "…" : highPriority.length}</strong></article>
       </section>
       <section className="catalog">
         <div className="catalog-heading"><div><div className="eyebrow">Productkwaliteit</div><h2>Aandacht nodig</h2></div></div>
         <div className="admin-controls">
           <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Zoek maaltijd of aanbieder…" aria-label="Zoek maaltijd of aanbieder" />
           <select value={view} onChange={e => setView(e.target.value)} aria-label="Filter productgegevens">
-            <option value="all">Alle maaltijden</option><option value="missing">Ontbrekende gegevens</option><option value="stale">Ouder dan 30 dagen</option><option value="never">Nooit gecontroleerd</option><option value="invalid">Ongeldige controledatum</option><option value="no-image">Geen afbeelding</option><option value="bad-link">Ongeldige of ontbrekende productlink</option>
+            <option value="all">Alle maaltijden</option><option value="priority">Hoge controleprioriteit</option><option value="missing">Ontbrekende gegevens</option><option value="stale">Ouder dan 30 dagen</option><option value="never">Nooit gecontroleerd</option><option value="invalid">Ongeldige controledatum</option><option value="no-image">Geen afbeelding</option><option value="bad-link">Ongeldige of ontbrekende productlink</option>
           </select>
           <select value={vendorFilter} onChange={e => setVendorFilter(e.target.value)} aria-label="Filter op aanbieder">
             <option value="all">Alle aanbieders</option>
