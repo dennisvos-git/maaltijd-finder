@@ -44,6 +44,16 @@ const missingData = (product: Product) => dataFields.filter(([field]) => {
   return value === null || value === undefined || (typeof value === "string" && value.trim() === "");
 }).map(([, label]) => label);
 
+const safeExternalUrl = (value: string | null | undefined) => {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+};
+
 const hasReliableCheckDate = (value: string | null) => {
   if (!value) return false;
   const timestamp = new Date(value).getTime();
@@ -364,7 +374,7 @@ export default function Home() {
                           <strong>{product.price != null ? euro(product.price) : "Prijs onbekend"}</strong>
                           {pricePerKg != null && <small>{euro(pricePerKg)} / kg</small>}
                         </div>
-                        <div className="product-card-links"><Link className="product-link" href={`/maaltijd/${product.id}`}>Details bekijken →</Link><a className="product-link" href={product.product_url} target="_blank" rel="noreferrer">Aanbieder ↗</a></div>
+                        <div className="product-card-links"><Link className="product-link" href={`/maaltijd/${product.id}`}>Details bekijken →</Link>{safeExternalUrl(product.product_url) ? <a className="product-link" href={safeExternalUrl(product.product_url)!} target="_blank" rel="noopener noreferrer">Aanbieder ↗</a> : <span className="detail-muted">Aanbiederslink niet beschikbaar</span>}</div>
                       </div>
                       {vendor?.minimum_order_quantity != null && (
                         <p className="delivery-note">Minimale bestelling: {vendor.minimum_order_quantity} maaltijden</p>
