@@ -62,3 +62,10 @@ Er draait op dit moment geen betrouwbare automatische dagelijkse scan van aanbie
 - De workflow `.github/workflows/quality-checks.yml` voert importzelftests, lint en build uit. De dubbele oudere buildworkflow is verwijderd om checks niet dubbel te draaien.
 
 Deze technische vindbaarheidsverbeteringen zijn geen garantie op hogere posities in zoekmachines. De sitemap kan alleen productpagina's opnemen als de Supabase publieke leesverbinding tijdens het genereren beschikbaar is.
+
+## Cataloguskwaliteit en toegankelijkheid
+- De volledigheidsscore telt zeven velden: prijs, gewicht, energie, eiwitten, koolhydraten, vetten en ingrediënten. De score meet alleen de aanwezigheid van gegevens, niet de voedingskwaliteit of bronjuistheid.
+- Tekstvelden met uitsluitend witruimte gelden als ontbrekend; dit is gelijkgetrokken op catalogus- en detailpagina.
+- De resultaatmelding van de catalogus wordt als live status aan hulptechnologie doorgegeven.
+- Productafbeeldingen in de catalogus en op detailpagina's worden waar mogelijk uitgesteld geladen.
+- De filterreset zet zoekterm, filters en sortering terug naar de standaardinstellingen.
