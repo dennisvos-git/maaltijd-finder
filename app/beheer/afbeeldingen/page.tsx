@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase";
+import { fetchAllRows } from "../../../lib/fetch-all-rows";
 
 type Product = {
   id: string;
@@ -63,14 +64,19 @@ export default function AdminImagesPage() {
         if (active) { setError("Dit account heeft geen beheerrechten."); setLoading(false); }
         return;
       }
-      const { data, error: queryError } = await supabase
-        .from("products")
-        .select("id,name,product_url,image_url,vendors!inner(name,verification_status,country_code,is_active)")
-        .eq("is_active", true)
-        .eq("vendors.verification_status", "verified")
-        .eq("vendors.country_code", "NL")
-        .eq("vendors.is_active", true)
-        .order("name");
+      const { data, error: queryError } = await fetchAllRows(
+        (from, to) => supabase
+          .from("products")
+          .select("id,name,product_url,image_url,vendors!inner(name,verification_status,country_code,is_active)")
+          .eq("is_active", true)
+          .eq("vendors.verification_status", "verified")
+          .eq("vendors.country_code", "NL")
+          .eq("vendors.is_active", true)
+          .or("image_url.is.null,image_url.eq.")
+          .order("name")
+          .order("id")
+          .range(from, to)
+      );
       if (!active) return;
       if (queryError) setError("De maaltijden konden niet worden opgehaald.");
       else {

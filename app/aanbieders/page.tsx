@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { isSupabaseConfigured, supabase } from "../../lib/supabase";
+import { fetchAllRows } from "../../lib/fetch-all-rows";
 
 type Vendor = {
   id: string;
@@ -46,13 +47,17 @@ export default function VendorsPage() {
         return;
       }
 
-      const { data, error: queryError } = await supabase
-        .from("vendors")
-        .select("id, name, website_url, delivery_info, minimum_order_quantity, minimum_order_value, last_checked_at")
-        .eq("is_active", true)
-        .eq("verification_status", "verified")
-        .eq("country_code", "NL")
-        .order("name");
+      const { data, error: queryError } = await fetchAllRows(
+        (from, to) => supabase
+          .from("vendors")
+          .select("id, name, website_url, delivery_info, minimum_order_quantity, minimum_order_value, last_checked_at")
+          .eq("is_active", true)
+          .eq("verification_status", "verified")
+          .eq("country_code", "NL")
+          .order("name")
+          .order("id")
+          .range(from, to)
+      );
 
       if (cancelled) return;
       if (queryError) setError("De aanbieders konden niet worden opgehaald. Probeer het later opnieuw.");

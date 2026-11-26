@@ -106,3 +106,18 @@ Publieke product-, afbeelding- en aanbiederslinks worden alleen als externe link
 ## Bestaande maaltijden van afbeeldingen voorzien
 
 De beveiligde beheerpagina `/beheer/afbeeldingen` toont actieve producten van actieve, geverifieerde Nederlandse aanbieders waarvoor `image_url` nog leeg is. Een beheerder kan per bestaand product een HTTPS-afbeeldingslink invoeren, vooraf bekijken en afzonderlijk opslaan. De pagina controleert de ingelogde Supabase Auth-gebruiker tegen `public.admin_users`; de bestaande update-policy voor beheerders beschermt de databasewijziging. Er worden geen nieuwe producten aangemaakt en er worden geen afbeeldingen automatisch geraden of opgehaald. Gebruik bij voorkeur de exacte productafbeelding van de aanbieder en controleer de match handmatig. Het gaat om een afbeeldings-URL, niet om het uploaden van een lokaal bestand.
+
+
+## Grote catalogi en volledige gegevensophaal
+
+De homepage, aanbiederspagina, beheerdashboard, afbeeldingenbeheer en sitemap halen gegevens op in pagina's van maximaal 500 rijen. Hierdoor is de weergave niet afhankelijk van de standaardlimiet van één Supabase-query. De pagina's gebruiken een stabiele ID-volgorde en stoppen zodra een pagina minder dan 500 rijen bevat. Als een paginaquery mislukt, wordt de fout zichtbaar afgehandeld in plaats van een gedeeltelijke lijst als volledig te presenteren. Dit voorkomt dat grotere catalogi ongemerkt producten of aanbieders verbergen.
+
+
+## Extra betrouwbaarheid bij grote imports
+
+Ook de aanbiederslijst op de importpagina en de controles op bestaande productlinks worden gepagineerd opgehaald. Daardoor kan een bestaande dubbele productlink niet buiten de eerste API-resultatenpagina vallen. Lege invoer voor optionele numerieke velden en optionele datum-/tekstvelden wordt bij opslaan omgezet naar `null`, zodat lege tekst niet onbedoeld in een databasekolom voor getallen of datums terechtkomt. De afbeeldingsbeheerquery filtert producten zonder afbeelding al in de database, zodat onnodige productgegevens niet eerst naar de browser worden geladen. Bij een mislukte paginaophaal wordt de volledige dataset als mislukt behandeld.
+
+
+## Mobiele weergave van catalogus en beheer
+
+De homepage gebruikt geen vaste inline-kolombreedtes meer voor de filterkolom. Op schermen tot 600 px stapelen filters en resultaten onder elkaar, zodat de filters boven de resultaten staan en de productkaarten de beschikbare breedte benutten. De beheerfilters worden op smalle schermen één kolom; de dashboardtellers gebruiken twee compacte kolommen.

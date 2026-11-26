@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { isSupabaseConfigured, supabase } from "../../lib/supabase";
+import { fetchAllRows } from "../../lib/fetch-all-rows";
 
 type Product = {
   id: string;
@@ -85,16 +86,24 @@ export default function AdminOverviewPage() {
     async function load() {
       if (!supabase) { setLoading(false); return; }
       const [productResult, vendorResult] = await Promise.all([
-        supabase.from("products")
-          .select("id, name, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, last_checked_at, product_url, image_url, vendors!inner(name, verification_status, country_code, is_active)")
-          .eq("is_active", true)
-          .eq("vendors.verification_status", "verified")
-          .eq("vendors.country_code", "NL")
-          .eq("vendors.is_active", true)
-          .order("name"),
-        supabase.from("vendors")
-          .select("id, name, website_url, verification_status, country_code, is_active, last_checked_at, scan_enabled")
-          .order("name"),
+        fetchAllRows(
+          (from, to) => supabase.from("products")
+            .select("id, name, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, last_checked_at, product_url, image_url, vendors!inner(name, verification_status, country_code, is_active)")
+            .eq("is_active", true)
+            .eq("vendors.verification_status", "verified")
+            .eq("vendors.country_code", "NL")
+            .eq("vendors.is_active", true)
+            .order("name")
+            .order("id")
+            .range(from, to)
+        ),
+        fetchAllRows(
+          (from, to) => supabase.from("vendors")
+            .select("id, name, website_url, verification_status, country_code, is_active, last_checked_at, scan_enabled")
+            .order("name")
+            .order("id")
+            .range(from, to)
+        ),
       ]);
       if (cancelled) return;
       if (productResult.error || vendorResult.error) setError("De gegevens konden niet volledig worden opgehaald.");

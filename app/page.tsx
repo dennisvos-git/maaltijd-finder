@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { useEffect, useMemo, useState } from "react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
+import { fetchAllRows } from "../lib/fetch-all-rows";
 
 type Vendor = {
   name: string;
@@ -98,17 +99,21 @@ export default function Home() {
         return;
       }
 
-      const { data, error: queryError } = await supabase
-        .from("products")
-        .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors!inner(name, website_url, minimum_order_quantity, minimum_order_value, verification_status, country_code, is_active)")
-        .eq("is_active", true)
-        .eq("vendors.verification_status", "verified")
-        .eq("vendors.country_code", "NL")
-        .eq("vendors.is_active", true);
+      const { data, error: queryError } = await fetchAllRows(
+        (from, to) => supabase
+          .from("products")
+          .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors!inner(name, website_url, minimum_order_quantity, minimum_order_value, verification_status, country_code, is_active)")
+          .eq("is_active", true)
+          .eq("vendors.verification_status", "verified")
+          .eq("vendors.country_code", "NL")
+          .eq("vendors.is_active", true)
+          .order("id")
+          .range(from, to)
+      );
 
       if (cancelled) return;
       if (queryError) setError("De maaltijden konden niet worden opgehaald. Probeer het later opnieuw.");
-      else setProducts((data ?? []) as unknown as Product[]);
+      else setProducts(data as unknown as Product[]);
       setLoading(false);
     }
 
@@ -209,8 +214,8 @@ export default function Home() {
 
           {!loading && products.length > 0 && <div className="catalog-data-summary"><p>{incompleteCount} van {products.length} maaltijden missen nog één of meer gegevens. Ontbrekende velden staan per maaltijd vermeld.</p><p>De volledigheidsscore telt 7 velden: prijs, gewicht, energie, eiwitten, koolhydraten, vetten en ingrediënten. Het is geen beoordeling van voedingskwaliteit.</p></div>}
 
-          <div className="catalog-layout" style={{ display: "grid", gridTemplateColumns: "260px minmax(0, 1fr)", gap: "24px", alignItems: "start", width: "100%" }}>
-            <aside className="filters" aria-label="Filters en sortering" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", alignSelf: "start", width: "100%" }}>
+          <div className="catalog-layout">
+            <aside className="filters" aria-label="Filters en sortering">
             <label>
               <span>Zoeken</span>
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Maaltijd of aanbieder…" />

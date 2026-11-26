@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { supabase } from "../../../lib/supabase";
+import { fetchAllRows } from "../../../lib/fetch-all-rows";
 
 type ImportRow = Record<string, unknown> & {
   vendor_id: string; name: string; product_url: string; source_reference: string;
@@ -98,8 +99,20 @@ export default function AdminImportPage() {
       setSessionUser(userId);
       setIsAdmin(Boolean(data));
       if (data) {
-        const { data: vendorRows } = await client.from("vendors").select("id,name,country_code,verification_status,is_active").eq("is_active", true).eq("country_code", "NL").eq("verification_status", "verified").order("name");
-        if (active) setVendors((vendorRows ?? []) as Vendor[]);
+        const { data: vendorRows, error: vendorError } = await fetchAllRows(
+          (from, to) => client.from("vendors")
+            .select("id,name,country_code,verification_status,is_active")
+            .eq("is_active", true)
+            .eq("country_code", "NL")
+            .eq("verification_status", "verified")
+            .order("name")
+            .order("id")
+            .range(from, to)
+        );
+        if (active) {
+          setVendors(vendorError ? [] : vendorRows as Vendor[]);
+          if (vendorError) setMessage("De aanbiederslijst kon niet volledig worden geladen. Probeer opnieuw in te loggen.");
+        }
       }
     };
     void client.auth.getSession().then(({ data }) => check(data.session?.user.id ?? null));
@@ -141,9 +154,15 @@ export default function AdminImportPage() {
       const rows = parsed as ImportRow[];
       setWarnings(validation.warnings);
       const vendorIds = [...new Set(rows.map(r => r.vendor_id))];
-      const { data: existing, error: existingError } = await supabase.from("products").select("vendor_id,product_url").in("vendor_id", vendorIds);
-      if (existingError) throw new Error("Bestaande producten konden niet worden gecontroleerd.");
-      const existingSet = new Set((existing ?? []).map(r => `${r.vendor_id}|${r.product_url}`.toLowerCase()));
+      const { data: existing, error: existingError } = await fetchAllRows(
+        (from, to) => supabase.from("products")
+          .select("id,vendor_id,product_url")
+          .in("vendor_id", vendorIds)
+          .order("id")
+          .range(from, to)
+      );
+      if (existingError) throw new Error("Bestaande producten konden niet volledig worden gecontroleerd.");
+      const existingSet = new Set(existing.map(r => `${r.vendor_id}|${r.product_url}`.toLowerCase()));
       const duplicates = rows.flatMap((row, i) => existingSet.has(`${row.vendor_id}|${row.product_url}`.toLowerCase()) ? [`Regel ${i + 1}: deze productlink staat al in de catalogus; bestaande gegevens worden niet overschreven.`] : []);
       if (duplicates.length) { setErrors(duplicates); setBusy(false); return; }
       setPreviewRows(rows);
@@ -169,15 +188,24 @@ export default function AdminImportPage() {
         setPreviewRows(null);
         throw new Error("Een aanbieder is niet langer actief, geverifieerd en Nederlands. Controleer de import opnieuw; er is niets geïmporteerd.");
       }
-      const { data: existing, error: existingError } = await supabase.from("products").select("vendor_id,product_url").in("vendor_id", vendorIds);
-      if (existingError) throw new Error("Bestaande producten konden niet opnieuw worden gecontroleerd.");
-      const existingSet = new Set((existing ?? []).map(r => `${r.vendor_id}|${r.product_url}`.toLowerCase()));
+      const { data: existing, error: existingError } = await fetchAllRows(
+        (from, to) => supabase.from("products")
+          .select("id,vendor_id,product_url")
+          .in("vendor_id", vendorIds)
+          .order("id")
+          .range(from, to)
+      );
+      if (existingError) throw new Error("Bestaande producten konden niet opnieuw volledig worden gecontroleerd.");
+      const existingSet = new Set(existing.map(r => `${r.vendor_id}|${r.product_url}`.toLowerCase()));
       const duplicates = previewRows.filter(row => existingSet.has(`${row.vendor_id}|${row.product_url}`.toLowerCase()));
       if (duplicates.length) {
         setPreviewRows(null);
         throw new Error("Een of meer producten zijn inmiddels toegevoegd. Voer de controle opnieuw uit; er is niets geïmporteerd.");
       }
-      const payload = previewRows.map(row => Object.fromEntries(productColumns.filter(k => row[k] !== undefined).map(k => [k, row[k]])));
+      const nullableColumns = new Set([...Object.keys(numericRules), "image_url", "ingredients", "meal_type", "preparation_method", "category", "last_checked_at"]);
+      const payload = previewRows.map(row => Object.fromEntries(
+        productColumns.filter(k => row[k] !== undefined).map(k => [k, nullableColumns.has(k) && row[k] === "" ? null : row[k]])
+      ));
       const { error } = await supabase.from("products").insert(payload);
       if (error) throw new Error(error.message.includes("row-level security") ? "Database heeft de schrijfactie geblokkeerd. Controleer de beheerrol en SQL-migratie." : "Opslaan is niet gelukt. Controleer de importgegevens en database-instellingen.");
       setMessage(`${payload.length} product(en) succesvol geïmporteerd.`);
