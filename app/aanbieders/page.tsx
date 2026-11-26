@@ -42,13 +42,16 @@ export default function VendorsPage() {
     let cancelled = false;
 
     async function loadVendors() {
-      if (!supabase) {
+      // Bewaar de geconfigureerde client lokaal: TypeScript kan de null-check
+      // niet betrouwbaar doortrekken naar de callback die fetchAllRows uitvoert.
+      const db = supabase;
+      if (!db) {
         setLoading(false);
         return;
       }
 
       const { data, error: queryError } = await fetchAllRows(
-        (from, to) => supabase
+        (from, to) => db
           .from("vendors")
           .select("id, name, website_url, delivery_info, minimum_order_quantity, minimum_order_value, last_checked_at")
           .eq("is_active", true)
