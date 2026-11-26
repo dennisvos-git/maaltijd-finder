@@ -15,7 +15,7 @@ type Product = {
 const vendorName = (product: Product) =>
   Array.isArray(product.vendors) ? product.vendors[0]?.name ?? "Onbekende aanbieder" : product.vendors?.name ?? "Onbekende aanbieder";
 
-const safeImageUrl = (value: string) => {
+const safeExternalUrl = (value: string | null | undefined) => {\n  if (!value) return null;\n  try {\n    const url = new URL(value.trim());\n    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;\n  } catch {\n    return null;\n  }\n};\n\nconst safeImageUrl = (value: string) => {
   try {
     const url = new URL(value.trim());
     return url.protocol === "https:" && Boolean(url.hostname) ? url.toString() : null;
@@ -120,7 +120,7 @@ export default function AdminImagesPage() {
             return <article className="detail-panel" key={product.id}>
               <h3>{product.name}</h3>
               <p className="detail-muted">{vendorName(product)}</p>
-              {product.product_url && <p><a href={product.product_url} target="_blank" rel="noopener noreferrer">Bekijk product bij aanbieder ↗</a></p>}
+              {safeExternalUrl(product.product_url) && <p><a href={safeExternalUrl(product.product_url)!} target="_blank" rel="noopener noreferrer">Bekijk product bij aanbieder ↗</a></p>}
               <label>HTTPS-link naar de juiste maaltijdafbeelding
                 <input type="url" inputMode="url" placeholder="https://…" value={draft} onChange={e => setDrafts(current => ({ ...current, [product.id]: e.target.value }))} />
               </label>
