@@ -53,6 +53,10 @@ function validateRows(rows: unknown[], vendors: Vendor[]) {
     }
     if (row.availability !== undefined && !["available", "unavailable", "unknown"].includes(String(row.availability))) errors.push(`Regel ${n}: availability is ongeldig.`);
     if (row.dietary_labels !== undefined && (!Array.isArray(row.dietary_labels) || row.dietary_labels.some(v => typeof v !== "string"))) errors.push(`Regel ${n}: dietary_labels moet een lijst met tekst zijn.`);
+    if (row.is_active !== undefined && typeof row.is_active !== "boolean") errors.push(`Regel ${n}: is_active moet true of false zijn.`);
+    for (const key of ["image_url", "ingredients", "meal_type", "preparation_method", "category"]) {
+      if (row[key] !== undefined && row[key] !== null && typeof row[key] !== "string") errors.push(`Regel ${n}: ${key} moet tekst of leeg zijn.`);
+    }
     if (row.price === 0) warnings.push(`Regel ${n}: prijs is € 0; controleer of dit geen ontbrekende of verkeerd overgenomen prijs is.`);
     if (typeof row.weight_grams === "number" && row.weight_grams > 3000) warnings.push(`Regel ${n}: gewicht is hoger dan 3 kg; controleer de verpakkingseenheid.`);
     const macros = [row.protein_per_100g, row.carbohydrates_per_100g, row.fat_per_100g];
