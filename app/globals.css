@@ -186,3 +186,18 @@ a { text-underline-offset: 3px; }
     transition-duration: 0.01ms !important;
   }
 }
+
+.filters-reset {
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #f8fafc;
+  color: var(--green-dark);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+.filters-reset:hover { border-color: var(--green); background: var(--green-soft); }
+@media (max-width: 760px) { .filters-reset { grid-column: 1 / -1; } }
+@media (max-width: 600px) { .filters-reset { grid-column: auto; } }
