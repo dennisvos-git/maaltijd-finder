@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 
 const siteUrl = "https://maaltijd-finder-hnb20kene-maaltijd-finder.vercel.app";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const routes: MetadataRoute.Sitemap = [
     { url: siteUrl, changeFrequency: "daily", priority: 1 },
