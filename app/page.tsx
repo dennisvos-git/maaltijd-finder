@@ -191,7 +191,7 @@ export default function Home() {
             <span className="result-count">{loading ? "Laden…" : `${visibleProducts.length} maaltijden`}</span>
           </div>
 
-          {!loading && products.length > 0 && <p className="catalog-data-summary">{incompleteCount} van {products.length} maaltijden missen nog één of meer gegevens. Ontbrekende velden staan per maaltijd vermeld.</p>}
+          {!loading && products.length > 0 && <div className="catalog-data-summary"><p>{incompleteCount} van {products.length} maaltijden missen nog één of meer gegevens. Ontbrekende velden staan per maaltijd vermeld.</p><p>De volledigheidsscore telt 7 velden: prijs, gewicht, energie, eiwitten, koolhydraten, vetten en ingrediënten. Het is geen beoordeling van voedingskwaliteit.</p></div>}
 
           <div className="catalog-layout" style={{ display: "grid", gridTemplateColumns: "260px minmax(0, 1fr)", gap: "24px", alignItems: "start", width: "100%" }}>
             <aside className="filters" aria-label="Filters en sortering" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", alignSelf: "start", width: "100%" }}>
