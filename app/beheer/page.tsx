@@ -16,6 +16,7 @@ type Product = {
   ingredients: string | null;
   last_checked_at: string | null;
   product_url: string;
+  image_url: string | null;
   vendors: { name: string } | { name: string }[] | null;
 };
 type Vendor = {
@@ -65,7 +66,7 @@ export default function AdminOverviewPage() {
       if (!supabase) { setLoading(false); return; }
       const [productResult, vendorResult] = await Promise.all([
         supabase.from("products")
-          .select("id, name, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, last_checked_at, product_url, vendors!inner(name, verification_status, country_code, is_active)")
+          .select("id, name, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, last_checked_at, product_url, image_url, vendors!inner(name, verification_status, country_code, is_active)")
           .eq("is_active", true)
           .eq("vendors.verification_status", "verified")
           .eq("vendors.country_code", "NL")
@@ -108,7 +109,7 @@ export default function AdminOverviewPage() {
   return <>
     <header className="topbar"><div className="topbar-inner">
       <Link className="brand" href="/">Maaltijd <span>Finder</span></Link>
-      <nav className="nav-note site-nav"><Link href="/">Maaltijden</Link><Link href="/aanbieders">Aanbieders</Link><Link href="/beheer/import">Import / inloggen</Link></nav>
+      <nav className="nav-note site-nav"><Link href="/">Maaltijden</Link><Link href="/aanbieders">Aanbieders</Link><Link href="/beheer/import">Import / inloggen</Link><Link href="/beheer/afbeeldingen">Afbeeldingen</Link></nav>
     </div></header>
     <main>
       <section className="hero">
@@ -123,6 +124,7 @@ export default function AdminOverviewPage() {
         <article className="detail-panel"><span>Nooit gecontroleerd</span><strong>{loading ? "…" : neverChecked.length}</strong></article>
         <article className="detail-panel"><span>Ongeldige controledatum</span><strong>{loading ? "…" : invalidDate.length}</strong></article>
         <article className="detail-panel"><span>Aanbieders geregistreerd</span><strong>{loading ? "…" : vendors.length}</strong></article>
+        <article className="detail-panel"><span>Maaltijden zonder foto</span><strong>{loading ? "…" : products.filter(p => !p.image_url || !p.image_url.trim()).length}</strong></article>
       </section>
       <section className="catalog">
         <div className="catalog-heading"><div><div className="eyebrow">Productkwaliteit</div><h2>Aandacht nodig</h2></div></div>
@@ -165,7 +167,7 @@ export default function AdminOverviewPage() {
         </table></div>
       </section>
       <section className="detail-panel admin-security-note">
-        <h2>Beveiligd beheer</h2><p><Link href="/beheer/import">Open beheerlogin en productimport →</Link></p>
+        <h2>Beveiligd beheer</h2><p><Link href="/beheer/import">Open beheerlogin en productimport →</Link></p><p><Link href="/beheer/afbeeldingen">Ontbrekende maaltijdafbeeldingen aanvullen →</Link></p>
         <p>Dit overzicht is alleen-lezen. Via de beheerlogin kun je als geregistreerde beheerder nieuwe producten importeren. Bestaande producten worden niet overschreven en verwijderen is uitgeschakeld. De publieke website behoudt alleen-lezen rechten.</p>
       </section>
     </main>
