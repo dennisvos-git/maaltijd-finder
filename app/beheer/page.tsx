@@ -36,7 +36,8 @@ const fields: [keyof Product, string][] = [
 ];
 const vendorName = (p: Product) => Array.isArray(p.vendors) ? p.vendors[0]?.name ?? "Onbekend" : p.vendors?.name ?? "Onbekend";
 const isMissing = (value: unknown) => value == null || (typeof value === "string" && value.trim() === "");
-const old = (date: string | null) => Boolean(date) && Number.isFinite(new Date(date as string).getTime()) && new Date(date as string).getTime() < Date.now() - 30 * 86400000;
+const validDate = (date: string | null) => Boolean(date) && Number.isFinite(new Date(date as string).getTime());
+const old = (date: string | null) => validDate(date) && new Date(date as string).getTime() < Date.now() - 30 * 86400000;
 const euro = (value: number | null) => value == null ? "Onbekend" : new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
 
 export default function AdminOverviewPage() {
@@ -80,15 +81,16 @@ export default function AdminOverviewPage() {
   const incomplete = products.filter(p => fields.some(([key]) => isMissing(p[key])));
   const stale = products.filter(p => old(p.last_checked_at));
   const neverChecked = products.filter(p => !p.last_checked_at);
+  const invalidDate = products.filter(p => Boolean(p.last_checked_at) && !validDate(p.last_checked_at));
   const filtered = useMemo(() => products.filter(p => {
     const term = query.trim().toLocaleLowerCase("nl-NL");
     const matches = !term || [p.name, vendorName(p)].some(v => v.toLocaleLowerCase("nl-NL").includes(term));
     const missing = fields.some(([key]) => isMissing(p[key]));
     const productVendor = Array.isArray(p.vendors) ? p.vendors[0]?.name : p.vendors?.name;
     const matchesVendor = vendorFilter === "all" || productVendor === vendorFilter;
-    return matches && matchesVendor && (view === "all" || (view === "missing" && missing) || (view === "stale" && !!p.last_checked_at && old(p.last_checked_at)) || (view === "never" && !p.last_checked_at));
+    return matches && matchesVendor && (view === "all" || (view === "missing" && missing) || (view === "stale" && !!p.last_checked_at && old(p.last_checked_at)) || (view === "never" && !p.last_checked_at) || (view === "invalid" && Boolean(p.last_checked_at) && !validDate(p.last_checked_at)));
   }).sort((a, b) => {
-    if (sort === "oldest") return (a.last_checked_at ? new Date(a.last_checked_at).getTime() : 0) - (b.last_checked_at ? new Date(b.last_checked_at).getTime() : 0);
+    if (sort === "oldest") return (validDate(a.last_checked_at) ? new Date(a.last_checked_at as string).getTime() : 0) - (validDate(b.last_checked_at) ? new Date(b.last_checked_at as string).getTime() : 0);
     if (sort === "price-low") return (a.price ?? Number.POSITIVE_INFINITY) - (b.price ?? Number.POSITIVE_INFINITY);
     if (sort === "price-high") return (b.price ?? Number.NEGATIVE_INFINITY) - (a.price ?? Number.NEGATIVE_INFINITY);
     return a.name.localeCompare(b.name, "nl-NL");
@@ -110,6 +112,7 @@ export default function AdminOverviewPage() {
         <article className="detail-panel"><span>Onvolledige productinformatie</span><strong>{loading ? "…" : incomplete.length}</strong></article>
         <article className="detail-panel"><span>Ouder dan 30 dagen</span><strong>{loading ? "…" : stale.length}</strong></article>
         <article className="detail-panel"><span>Nooit gecontroleerd</span><strong>{loading ? "…" : neverChecked.length}</strong></article>
+        <article className="detail-panel"><span>Ongeldige controledatum</span><strong>{loading ? "…" : invalidDate.length}</strong></article>
         <article className="detail-panel"><span>Aanbieders geregistreerd</span><strong>{loading ? "…" : vendors.length}</strong></article>
       </section>
       <section className="catalog">
@@ -117,7 +120,7 @@ export default function AdminOverviewPage() {
         <div className="admin-controls">
           <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Zoek maaltijd of aanbieder…" aria-label="Zoek maaltijd of aanbieder" />
           <select value={view} onChange={e => setView(e.target.value)} aria-label="Filter productgegevens">
-            <option value="all">Alle maaltijden</option><option value="missing">Ontbrekende gegevens</option><option value="stale">Ouder dan 30 dagen</option><option value="never">Nooit gecontroleerd</option>
+            <option value="all">Alle maaltijden</option><option value="missing">Ontbrekende gegevens</option><option value="stale">Ouder dan 30 dagen</option><option value="never">Nooit gecontroleerd</option><option value="invalid">Ongeldige controledatum</option>
           </select>
           <select value={vendorFilter} onChange={e => setVendorFilter(e.target.value)} aria-label="Filter op aanbieder">
             <option value="all">Alle aanbieders</option>
@@ -139,7 +142,7 @@ export default function AdminOverviewPage() {
               <td><Link href={`/maaltijd/${p.id}`}>{p.name}</Link></td>
               <td>{vendorName(p)}</td><td>{euro(p.price)}</td>
               <td>{missing.length ? missing.join(", ") : "Compleet"}</td>
-              <td>{p.last_checked_at ? new Date(p.last_checked_at).toLocaleDateString("nl-NL") : "Nooit gecontroleerd"}{p.last_checked_at && old(p.last_checked_at) && <span className="stale-label">Ouder dan 30 dagen</span>}{!p.last_checked_at && <span className="stale-label">Controle ontbreekt</span>}</td>
+              <td>{!p.last_checked_at ? "Nooit gecontroleerd" : validDate(p.last_checked_at) ? new Date(p.last_checked_at).toLocaleDateString("nl-NL") : "Ongeldige datum"}{old(p.last_checked_at) && <span className="stale-label">Ouder dan 30 dagen</span>}{!p.last_checked_at && <span className="stale-label">Controle ontbreekt</span>}{Boolean(p.last_checked_at) && !validDate(p.last_checked_at) && <span className="stale-label">Datum nakijken</span>}</td>
               <td><a href={p.product_url} target="_blank" rel="noreferrer">Productpagina ↗</a></td>
             </tr>;
           })}</tbody>
