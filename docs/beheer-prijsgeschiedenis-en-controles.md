@@ -79,3 +79,8 @@ Ook ongeldige, niet-parseerbare controledatums worden apart geteld en zijn via e
 ## Extra importcontroles
 
 De JSON-import controleert verplichte tekstvelden op lege waarden, product-, bron- en optionele afbeeldingslinks op geldige HTTP(S)-URL's, en optionele controledatums op parseerbaarheid. Een ongeldige link of datum blokkeert de import. Een prijs van € 0 of een gewicht boven 3 kg geeft een waarschuwing om eenheden en bronovername te controleren; dit wordt niet automatisch afgekeurd. Gedeeltelijke voedingswaarden blijven toegestaan en onbekende waarden mogen leeg zijn. Zowel het beheerscherm als de zelfstandige validatietest melden afwijkende kcal ten opzichte van eiwit, koolhydraten en vet.
+
+
+## Extra datumcontrole bij import
+
+Een geldige `last_checked_at`-datum die meer dan vijf minuten in de toekomst ligt, geeft nu een waarschuwing in zowel de beheerpreview als de zelfstandige importvalidator. De import blijft mogelijk na handmatige controle; kleine tijdsverschillen door klok- of tijdzone-instellingen worden hiermee niet direct als harde fout behandeld. De zelftest bevat ook een scenario voor een toekomstige controledatum.
