@@ -9,6 +9,7 @@
 - Catalogusfilters: maaltijdsoort, bereiding, dieetkenmerk, beschikbaarheid, volledigheid, prijs, gewicht, controledatum en sortering.
 - Productdetail: geregistreerde prijsmeetpunten.
 - `supabase/migrations/20261125_price_history_trigger.sql`: registreert prijs- en beschikbaarheidswijzigingen in de database.
+- `supabase/migrations/20261126_public_price_history_read_policy.sql`: maakt meetpunten publiek leesbaar voor producten die nog zichtbaar zijn in de gecontroleerde Nederlandse catalogus.
 - `supabase/migrations/20261125_admin_roles_and_import_policies.sql`: beheerderslijst en beperkte databasepolicies.
 - `scripts/validate-product-import.mjs`: zelfstandige importvalidator met zelftest via `npm run validate:imports`.
 
@@ -30,11 +31,11 @@ De huidige importpagina voegt uitsluitend nieuwe producten toe; zij biedt geen p
 De beheerlogin bevat een functie 'Wachtwoord vergeten?'. De Supabase Auth URL Configuration moet de productie-URL als Site URL hebben en de redirect naar `/beheer/wachtwoord-reset` toestaan. De app gebruikt `NEXT_PUBLIC_SITE_URL` als die is ingesteld; anders de huidige domeinnaam.
 
 ## Prijsgeschiedenis
-Voer `supabase/migrations/20261125_price_history_trigger.sql` uit in Supabase SQL Editor. De migratie:
+Voer `supabase/migrations/20261125_price_history_trigger.sql` uit in Supabase SQL Editor. Voer daarna ook `supabase/migrations/20261126_public_price_history_read_policy.sql` uit. De eerste migratie:
 - maakt een trigger op products;
 - schrijft een meetpunt bij een nieuw product en bij een gewijzigde prijs of beschikbaarheid;
 - maakt voor bestaande producten één startmeetpunt met de huidige prijs;
-- geeft publieke rollen alleen SELECT op prijsgeschiedenis.
+- geeft publieke rollen alleen SELECT op prijsgeschiedenis. De aanvullende migratie maakt daarvoor ook expliciet een Row Level Security SELECT-policy aan; die laat alleen historie zien van actieve producten van actieve, geverifieerde Nederlandse aanbieders. Zonder een passende RLS-policy is een SQL SELECT-grant op zichzelf niet voldoende.
 
 De startmeetpunten zijn geen terugwerkende prijsgeschiedenis. Alleen wijzigingen aan productrecords vanaf installatie van de trigger worden automatisch vastgelegd. De trigger bezoekt geen aanbiederswebsites en haalt zelf geen actuele prijzen op.
 
