@@ -41,7 +41,7 @@ const dataFields = [
 
 const missingData = (product: Product) => dataFields.filter(([field]) => {
   const value = product[field];
-  return value === null || value === undefined || value === "";
+  return value === null || value === undefined || (typeof value === "string" && value.trim() === "");
 }).map(([, label]) => label);
 
 const euro = (value: number) =>
@@ -188,7 +188,7 @@ export default function Home() {
               <div className="eyebrow">Het aanbod</div>
               <h2>Maaltijden vergelijken</h2>
             </div>
-            <span className="result-count">{loading ? "Laden…" : `${visibleProducts.length} maaltijden`}</span>
+            <span className="result-count" aria-live="polite" aria-atomic="true">{loading ? "Laden…" : `${visibleProducts.length} maaltijden`}</span>
           </div>
 
           {!loading && products.length > 0 && <div className="catalog-data-summary"><p>{incompleteCount} van {products.length} maaltijden missen nog één of meer gegevens. Ontbrekende velden staan per maaltijd vermeld.</p><p>De volledigheidsscore telt 7 velden: prijs, gewicht, energie, eiwitten, koolhydraten, vetten en ingrediënten. Het is geen beoordeling van voedingskwaliteit.</p></div>}
