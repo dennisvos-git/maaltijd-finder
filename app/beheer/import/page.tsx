@@ -195,7 +195,7 @@ export default function AdminImportPage() {
         throw new Error("Een aanbieder is niet langer actief, geverifieerd en Nederlands. Controleer de import opnieuw; er is niets geïmporteerd.");
       }
       const { data: existing, error: existingError } = await fetchAllRows(
-        (from, to) => supabase.from("products")
+        (from, to) => db.from("products")
           .select("id,vendor_id,product_url")
           .in("vendor_id", vendorIds)
           .order("id")
