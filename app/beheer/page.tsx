@@ -35,7 +35,8 @@ const fields: [keyof Product, string][] = [
   ["fat_per_100g", "vetten"], ["ingredients", "ingrediënten"],
 ];
 const vendorName = (p: Product) => Array.isArray(p.vendors) ? p.vendors[0]?.name ?? "Onbekend" : p.vendors?.name ?? "Onbekend";
-const old = (date: string | null) => !date || new Date(date).getTime() < Date.now() - 30 * 86400000;
+const isMissing = (value: unknown) => value == null || (typeof value === "string" && value.trim() === "");
+const old = (date: string | null) => Boolean(date) && Number.isFinite(new Date(date as string).getTime()) && new Date(date as string).getTime() < Date.now() - 30 * 86400000;
 const euro = (value: number | null) => value == null ? "Onbekend" : new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
 
 export default function AdminOverviewPage() {
@@ -76,12 +77,13 @@ export default function AdminOverviewPage() {
     return () => { cancelled = true; };
   }, []);
 
-  const incomplete = products.filter(p => fields.some(([key]) => p[key] == null || p[key] === ""));
+  const incomplete = products.filter(p => fields.some(([key]) => isMissing(p[key])));
   const stale = products.filter(p => old(p.last_checked_at));
+  const neverChecked = products.filter(p => !p.last_checked_at);
   const filtered = useMemo(() => products.filter(p => {
     const term = query.trim().toLocaleLowerCase("nl-NL");
     const matches = !term || [p.name, vendorName(p)].some(v => v.toLocaleLowerCase("nl-NL").includes(term));
-    const missing = fields.some(([key]) => p[key] == null || p[key] === "");
+    const missing = fields.some(([key]) => isMissing(p[key]));
     const productVendor = Array.isArray(p.vendors) ? p.vendors[0]?.name : p.vendors?.name;
     const matchesVendor = vendorFilter === "all" || productVendor === vendorFilter;
     return matches && matchesVendor && (view === "all" || (view === "missing" && missing) || (view === "stale" && !!p.last_checked_at && old(p.last_checked_at)) || (view === "never" && !p.last_checked_at));
@@ -106,7 +108,8 @@ export default function AdminOverviewPage() {
       <section className="admin-stats">
         <article className="detail-panel"><span>Actieve maaltijden</span><strong>{loading ? "…" : products.length}</strong></article>
         <article className="detail-panel"><span>Onvolledige productinformatie</span><strong>{loading ? "…" : incomplete.length}</strong></article>
-        <article className="detail-panel"><span>Ouder dan 30 dagen / onbekend</span><strong>{loading ? "…" : stale.length}</strong></article>
+        <article className="detail-panel"><span>Ouder dan 30 dagen</span><strong>{loading ? "…" : stale.length}</strong></article>
+        <article className="detail-panel"><span>Nooit gecontroleerd</span><strong>{loading ? "…" : neverChecked.length}</strong></article>
         <article className="detail-panel"><span>Aanbieders geregistreerd</span><strong>{loading ? "…" : vendors.length}</strong></article>
       </section>
       <section className="catalog">
@@ -131,7 +134,7 @@ export default function AdminOverviewPage() {
         {!loading && !error && filtered.length > 0 && <div className="admin-table-wrap"><table className="admin-table">
           <thead><tr><th>Maaltijd</th><th>Aanbieder</th><th>Prijs</th><th>Ontbreekt</th><th>Laatste controle</th><th>Bron</th></tr></thead>
           <tbody>{filtered.map(p => {
-            const missing = fields.filter(([key]) => p[key] == null || p[key] === "").map(([, label]) => label);
+            const missing = fields.filter(([key]) => isMissing(p[key])).map(([, label]) => label);
             return <tr key={p.id}>
               <td><Link href={`/maaltijd/${p.id}`}>{p.name}</Link></td>
               <td>{vendorName(p)}</td><td>{euro(p.price)}</td>
