@@ -84,10 +84,11 @@ export default function AdminOverviewPage() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      if (!supabase) { setLoading(false); return; }
+      const db = supabase;
+      if (!db) { setLoading(false); return; }
       const [productResult, vendorResult] = await Promise.all([
         fetchAllRows(
-          (from, to) => supabase.from("products")
+          (from, to) => db.from("products")
             .select("id, name, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, last_checked_at, product_url, image_url, vendors!inner(name, verification_status, country_code, is_active)")
             .eq("is_active", true)
             .eq("vendors.verification_status", "verified")
@@ -98,7 +99,7 @@ export default function AdminOverviewPage() {
             .range(from, to)
         ),
         fetchAllRows(
-          (from, to) => supabase.from("vendors")
+          (from, to) => db.from("vendors")
             .select("id, name, website_url, verification_status, country_code, is_active, last_checked_at, scan_enabled")
             .order("name")
             .order("id")
