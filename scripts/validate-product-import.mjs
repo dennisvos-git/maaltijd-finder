@@ -133,6 +133,10 @@ function selfTest() {
   const invalidAvailability = validate([{ ...valid, availability: "maybe" }]);
   const invalidDietaryLabels = validate([{ ...valid, dietary_labels: ["vegan", 42] }]);
   const partialNutrition = validate([{ ...valid, protein_per_100g: 20 }]);
+  const suspiciousPrice = validate([{ ...valid, price: 0 }]);
+  const suspiciousWeight = validate([{ ...valid, weight_grams: 4000 }]);
+  const invalidImageUrl = validate([{ ...valid, image_url: "javascript:alert(1)" }]);
+  const invalidCheckDate = validate([{ ...valid, last_checked_at: "geen-datum" }]);
   const nonObjectRow = validate([null]);
   if (validResult.errors.length || invalidResult.errors.length < 4 ||
       !duplicateResult.errors.some((e) => e.includes("bestaande catalogus")) ||
@@ -142,8 +146,12 @@ function selfTest() {
       !invalidAvailability.errors.some((e) => e.includes("availability")) ||
       !invalidDietaryLabels.errors.some((e) => e.includes("dietary_labels")) ||
       !partialNutrition.warnings.length ||
+      !suspiciousPrice.warnings.some((w) => w.includes("prijs is € 0")) ||
+      !suspiciousWeight.warnings.some((w) => w.includes("gewicht is hoger")) ||
+      !invalidImageUrl.errors.some((e) => e.includes("image_url")) ||
+      !invalidCheckDate.errors.some((e) => e.includes("last_checked_at")) ||
       !nonObjectRow.errors.some((e) => e.includes("verwacht een object"))) {
-    console.error("Zelftest mislukt.", { validResult, invalidResult, duplicateResult, duplicateInFile, impossibleNutrition, suspiciousEnergy, invalidAvailability, invalidDietaryLabels, partialNutrition, nonObjectRow });
+    console.error("Zelftest mislukt.", { validResult, invalidResult, duplicateResult, duplicateInFile, impossibleNutrition, suspiciousEnergy, invalidAvailability, invalidDietaryLabels, partialNutrition, suspiciousPrice, suspiciousWeight, invalidImageUrl, invalidCheckDate, nonObjectRow });
     process.exitCode = 1;
     return;
   }
