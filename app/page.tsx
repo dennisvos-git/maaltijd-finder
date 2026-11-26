@@ -272,6 +272,26 @@ export default function Home() {
                 <option value="protein-per-euro">Meeste eiwit per euro (hele maaltijd)</option>
               </select>
             </label>
+            <button
+              type="button"
+              className="filters-reset"
+              onClick={() => {
+                setSearch("");
+                setMealType("all");
+                setPreparation("all");
+                setDietaryLabel("all");
+                setAvailability("all");
+                setDataStatus("all");
+                setMinPrice("");
+                setMaxPrice("");
+                setMinWeight("");
+                setMaxWeight("");
+                setFreshness("all");
+                setSort("name");
+              }}
+            >
+              Wis filters en sortering
+            </button>
             </aside>
             <div className="catalog-results">
 
