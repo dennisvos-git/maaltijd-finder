@@ -156,6 +156,18 @@ export default function AdminImportPage() {
     setBusy(true); setErrors([]); setMessage("");
     try {
       const vendorIds = [...new Set(previewRows.map(r => r.vendor_id))];
+      const { data: currentVendors, error: vendorError } = await supabase
+        .from("vendors")
+        .select("id")
+        .in("id", vendorIds)
+        .eq("is_active", true)
+        .eq("country_code", "NL")
+        .eq("verification_status", "verified");
+      if (vendorError) throw new Error("Aanbieders konden niet opnieuw worden gecontroleerd. Er is niets geïmporteerd.");
+      if ((currentVendors ?? []).length !== vendorIds.length) {
+        setPreviewRows(null);
+        throw new Error("Een aanbieder is niet langer actief, geverifieerd en Nederlands. Controleer de import opnieuw; er is niets geïmporteerd.");
+      }
       const { data: existing, error: existingError } = await supabase.from("products").select("vendor_id,product_url").in("vendor_id", vendorIds);
       if (existingError) throw new Error("Bestaande producten konden niet opnieuw worden gecontroleerd.");
       const existingSet = new Set((existing ?? []).map(r => `${r.vendor_id}|${r.product_url}`.toLowerCase()));
