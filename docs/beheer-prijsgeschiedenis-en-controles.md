@@ -50,3 +50,15 @@ Er draait op dit moment geen betrouwbare automatische dagelijkse scan van aanbie
 - Controleer bronlinks en duplicaten vóór import.
 - Bekijk de preview zorgvuldig en bevestig alleen als de gegevens kloppen.
 - Importeer kleine batches; controleer daarna het dashboard en de productdetailpagina.
+
+
+## Vindbaarheid en uitleg voor bezoekers
+- De globale metadata bevat Nederlandstalige titels, beschrijvingen, canonical URL en social-share metadata.
+- Productdetailpagina's krijgen per product een eigen titel en beschrijving op basis van de gecontroleerde catalogusgegevens.
+- `/sitemap.xml` bevat de homepage, aanbiederspagina en actieve producten van geverifieerde Nederlandse aanbieders.
+- `/robots.txt` verwijst naar de sitemap en sluit `/beheer/` uit voor zoekmachinecrawlers.
+- `/uitleg` licht de vergelijkingsmethode toe, waaronder ontbrekende waarden, prijs per kilo, geschatte portiewaarden en bestellen bij de aanbieder.
+- Er is een eigen 404-pagina en een herstelbare globale foutpagina.
+- De workflow `.github/workflows/quality-checks.yml` voert importzelftests, lint en build uit. De dubbele oudere buildworkflow is verwijderd om checks niet dubbel te draaien.
+
+Deze technische vindbaarheidsverbeteringen zijn geen garantie op hogere posities in zoekmachines. De sitemap kan alleen productpagina's opnemen als de Supabase publieke leesverbinding tijdens het genereren beschikbaar is.
