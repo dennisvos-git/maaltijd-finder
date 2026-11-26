@@ -87,3 +87,8 @@ Een geldige `last_checked_at`-datum die meer dan vijf minuten in de toekomst lig
 
 
 De importpagina toont waarschuwingen en afkeurpunten nu als afzonderlijke, getelde overzichten. De waarschuwingen zijn via een live status toegankelijk; fouten krijgen een dringender schermlezermelding. Bij afkeuring wordt expliciet vermeld dat er niets is opgeslagen.
+
+
+## Controledatums op bezoekerspagina's
+
+De openbare catalogus en productdetailpagina tonen geen misleidende datum wanneer `last_checked_at` ontbreekt, ongeldig is of in de toekomst ligt. Zulke producten vallen bij de actualiteitsfilter onder 'Ouder dan 30 dagen / onbekend' en krijgen een melding dat de controledatum moet worden nagekeken. Alleen een geldige datum die niet in de toekomst ligt, telt als gecontroleerd; dit blijft een administratieve datum en geen bewijs van een automatische websitecontrole.
