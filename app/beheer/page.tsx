@@ -106,6 +106,20 @@ export default function AdminOverviewPage() {
     return a.name.localeCompare(b.name, "nl-NL");
   }), [products, query, view, vendorFilter, sort]);
 
+  function exportFilteredCsv() {
+    const headers = ["Product-ID", "Maaltijd", "Aanbieder", "Prijs (EUR)", "Gewicht (gram)", "Energie (kcal/100g)", "Eiwitten (g/100g)", "Koolhydraten (g/100g)", "Vetten (g/100g)", "Ingrediënten", "Laatste controle", "Productlink", "Afbeelding"];
+    const rows = filtered.map(p => [p.id, p.name, vendorName(p), p.price, p.weight_grams, p.kcal_per_100g, p.protein_per_100g, p.carbohydrates_per_100g, p.fat_per_100g, p.ingredients, p.last_checked_at, p.product_url, p.image_url]);
+    const csv = "\\uFEFF" + [headers, ...rows].map(row => row.map(csvCell).join(";")).join("\\r\\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `maaltijd-finder-controle-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
   return <>
     <header className="topbar"><div className="topbar-inner">
       <Link className="brand" href="/">Maaltijd <span>Finder</span></Link>
@@ -141,6 +155,7 @@ export default function AdminOverviewPage() {
             <option value="name">Sorteer: naam</option><option value="oldest">Sorteer: oudste controle eerst</option><option value="price-low">Sorteer: laagste prijs</option><option value="price-high">Sorteer: hoogste prijs</option>
           </select>
         </div>
+        <div className="catalog-heading"><p className="detail-muted" aria-live="polite">{loading ? "Resultaten laden…" : `${filtered.length} producten in deze selectie`}</p><button className="admin-secondary" type="button" onClick={exportFilteredCsv} disabled={loading || filtered.length === 0}>Exporteer selectie als CSV</button></div>
         {!isSupabaseConfigured && <div className="empty-state"><h2>Database niet ingesteld</h2></div>}
         {loading && <p className="loading-message">Overzicht ophalen…</p>}
         {error && <div className="empty-state"><p>{error}</p></div>}
