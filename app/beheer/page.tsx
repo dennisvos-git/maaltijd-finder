@@ -36,8 +36,17 @@ const fields: [keyof Product, string][] = [
 ];
 const vendorName = (p: Product) => Array.isArray(p.vendors) ? p.vendors[0]?.name ?? "Onbekend" : p.vendors?.name ?? "Onbekend";
 const isMissing = (value: unknown) => value == null || (typeof value === "string" && value.trim() === "");
-const validDate = (date: string | null) => Boolean(date) && Number.isFinite(new Date(date as string).getTime());
+const validDate = (date: string | null) => Boolean(date) && Number.isFinite(new Date(date as string).getTime()) && new Date(date as string).getTime() <= Date.now();
 const old = (date: string | null) => validDate(date) && new Date(date as string).getTime() < Date.now() - 30 * 86400000;
+const safeExternalUrl = (value: string | null | undefined) => {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+};
 const euro = (value: number | null) => value == null ? "Onbekend" : new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
 
 export default function AdminOverviewPage() {
@@ -143,7 +152,7 @@ export default function AdminOverviewPage() {
               <td>{vendorName(p)}</td><td>{euro(p.price)}</td>
               <td>{missing.length ? missing.join(", ") : "Compleet"}</td>
               <td>{!p.last_checked_at ? "Nooit gecontroleerd" : validDate(p.last_checked_at) ? new Date(p.last_checked_at).toLocaleDateString("nl-NL") : "Ongeldige datum"}{old(p.last_checked_at) && <span className="stale-label">Ouder dan 30 dagen</span>}{!p.last_checked_at && <span className="stale-label">Controle ontbreekt</span>}{Boolean(p.last_checked_at) && !validDate(p.last_checked_at) && <span className="stale-label">Datum nakijken</span>}</td>
-              <td><a href={p.product_url} target="_blank" rel="noreferrer">Productpagina ↗</a></td>
+              <td>{safeExternalUrl(p.product_url) ? <a href={safeExternalUrl(p.product_url)!} target="_blank" rel="noopener noreferrer">Productpagina ↗</a> : "Ongeldige of ontbrekende link"}</td>
             </tr>;
           })}</tbody>
         </table></div>}
@@ -152,7 +161,7 @@ export default function AdminOverviewPage() {
         <div className="catalog-heading"><div><div className="eyebrow">Aanbieders</div><h2>Aanbieders en scanconfiguratie</h2><p className="detail-muted">De scanstatus is alleen een configuratieveld. Er draait momenteel geen automatische dagelijkse scan.</p></div></div>
         <div className="admin-table-wrap"><table className="admin-table">
           <thead><tr><th>Aanbieder</th><th>Land</th><th>Verificatie</th><th>Actief</th><th>Scanconfiguratie</th><th>Website</th></tr></thead>
-          <tbody>{vendors.map(v => <tr key={v.id}><td>{v.name}</td><td>{v.country_code}</td><td>{v.verification_status}</td><td>{v.is_active ? "Ja" : "Nee"}</td><td>{v.scan_enabled ? "Aan (workflow niet actief)" : "Uit"}</td><td>{v.website_url ? <a href={v.website_url} target="_blank" rel="noreferrer">Website ↗</a> : "—"}</td></tr>)}</tbody>
+          <tbody>{vendors.map(v => <tr key={v.id}><td>{v.name}</td><td>{v.country_code}</td><td>{v.verification_status}</td><td>{v.is_active ? "Ja" : "Nee"}</td><td>{v.scan_enabled ? "Aan (workflow niet actief)" : "Uit"}</td><td>{safeExternalUrl(v.website_url) ? <a href={safeExternalUrl(v.website_url)!} target="_blank" rel="noopener noreferrer">Website ↗</a> : "—"}</td></tr>)}</tbody>
         </table></div>
       </section>
       <section className="detail-panel admin-security-note">
