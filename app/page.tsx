@@ -175,7 +175,34 @@ export default function Home() {
             : hasReliableCheckDate(product.last_checked_at) && new Date(product.last_checked_at as string).getTime() >= Date.now() - 30 * 24 * 60 * 60 * 1000));
     });
 
-    const activeFilterCount = [
+  return filtered.sort((a, b) => {
+      if (sort === "price") return (a.price ?? Number.MAX_VALUE) - (b.price ?? Number.MAX_VALUE);
+      if (sort === "price-per-kg") {
+        const aValue = a.price != null && a.weight_grams ? a.price / a.weight_grams : Number.MAX_VALUE;
+        const bValue = b.price != null && b.weight_grams ? b.price / b.weight_grams : Number.MAX_VALUE;
+        return aValue - bValue;
+      }
+      if (sort === "kcal") {
+        return (a.kcal_per_100g ?? Number.MAX_VALUE) - (b.kcal_per_100g ?? Number.MAX_VALUE);
+      }
+      if (sort === "protein") {
+        return (b.protein_per_100g ?? -1) - (a.protein_per_100g ?? -1);
+      }
+      if (sort === "protein-per-euro") {
+        // Compare total protein in the complete package, not only the value per 100 g.
+        const aValue = a.price != null && a.price > 0 && a.weight_grams != null && a.protein_per_100g != null
+          ? (a.protein_per_100g * a.weight_grams / 100) / a.price
+          : -1;
+        const bValue = b.price != null && b.price > 0 && b.weight_grams != null && b.protein_per_100g != null
+          ? (b.protein_per_100g * b.weight_grams / 100) / b.price
+          : -1;
+        return bValue - aValue;
+      }
+      return a.name.localeCompare(b.name, "nl");
+    });
+  }, [products, search, mealType, preparation, dietaryLabel, availability, dataStatus, minPrice, maxPrice, minWeight, maxWeight, freshness, sort]);
+
+  const activeFilterCount = [
     search.trim() !== "",
     mealType !== "all",
     preparation !== "all",
@@ -203,33 +230,6 @@ export default function Home() {
     setFreshness("all");
     setSort("name");
   }
-
-  return filtered.sort((a, b) => {
-      if (sort === "price") return (a.price ?? Number.MAX_VALUE) - (b.price ?? Number.MAX_VALUE);
-      if (sort === "price-per-kg") {
-        const aValue = a.price != null && a.weight_grams ? a.price / a.weight_grams : Number.MAX_VALUE;
-        const bValue = b.price != null && b.weight_grams ? b.price / b.weight_grams : Number.MAX_VALUE;
-        return aValue - bValue;
-      }
-      if (sort === "kcal") {
-        return (a.kcal_per_100g ?? Number.MAX_VALUE) - (b.kcal_per_100g ?? Number.MAX_VALUE);
-      }
-      if (sort === "protein") {
-        return (b.protein_per_100g ?? -1) - (a.protein_per_100g ?? -1);
-      }
-      if (sort === "protein-per-euro") {
-        // Compare total protein in the complete package, not only the value per 100 g.
-        const aValue = a.price != null && a.price > 0 && a.weight_grams != null && a.protein_per_100g != null
-          ? (a.protein_per_100g * a.weight_grams / 100) / a.price
-          : -1;
-        const bValue = b.price != null && b.price > 0 && b.weight_grams != null && b.protein_per_100g != null
-          ? (b.protein_per_100g * b.weight_grams / 100) / b.price
-          : -1;
-        return bValue - aValue;
-      }
-      return a.name.localeCompare(b.name, "nl");
-    });
-  }, [products, search, mealType, preparation, dietaryLabel, availability, dataStatus, minPrice, maxPrice, minWeight, maxWeight, freshness, sort]);
 
   return (
     <>
