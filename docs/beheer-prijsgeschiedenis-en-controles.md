@@ -95,3 +95,8 @@ De openbare catalogus en productdetailpagina tonen geen misleidende datum wannee
 
 
 Bij een import met waarschuwingen moet de beheerder in de preview expliciet aanvinken dat alle waarschuwingen aan de hand van de brongegevens zijn gecontroleerd. Zonder die bevestiging blijft de importknop uitgeschakeld. Het aanpassen van de JSON of annuleren van de preview wist deze bevestiging.
+
+
+## Veilige externe links en toekomstige controledatums
+
+Publieke product-, afbeelding- en aanbiederslinks worden alleen als externe link of afbeelding gebruikt wanneer de URL een absolute `http`- of `https`-URL is. Bij een ongeldige productlink blijft de productdetailpagina beschikbaar, maar wordt geen uitgaande knop getoond. Het beheer-overzicht behandelt ook toekomstige controledatums als ongeldig; zo sluiten de tellingen en filters aan op de openbare catalogus. Dit controleert de URL-vorm, niet of de externe website bereikbaar is of de inhoud klopt.
