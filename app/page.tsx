@@ -94,13 +94,14 @@ export default function Home() {
     let cancelled = false;
 
     async function loadProducts() {
-      if (!supabase) {
+      const db = supabase;
+      if (!db) {
         setLoading(false);
         return;
       }
 
       const { data, error: queryError } = await fetchAllRows(
-        (from, to) => supabase
+        (from, to) => db
           .from("products")
           .select("id, name, product_url, image_url, price, weight_grams, kcal_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, ingredients, meal_type, preparation_method, category, dietary_labels, availability, last_checked_at, vendors!inner(name, website_url, minimum_order_quantity, minimum_order_value, verification_status, country_code, is_active)")
           .eq("is_active", true)
