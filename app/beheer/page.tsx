@@ -189,7 +189,9 @@ export default function AdminOverviewPage() {
           <thead><tr><th>Prioriteit</th><th>Maaltijd</th><th>Aanbieder</th><th>Prijs</th><th>Ontbreekt</th><th>Laatste controle</th><th>Bron</th></tr></thead>
           <tbody>{filtered.map(p => {
             const missing = fields.filter(([key]) => isMissing(p[key])).map(([, label]) => label);
+            const priority = checkPriority(p);
             return <tr key={p.id}>
+              <td><span className="stale-label" title={priority.reason}>{priority.label}</span><small className="detail-muted">{priority.reason}</small></td>
               <td><Link href={`/maaltijd/${p.id}`}>{p.name}</Link></td>
               <td>{vendorName(p)}</td><td>{euro(p.price)}</td>
               <td>{missing.length ? missing.join(", ") : "Compleet"}</td>
