@@ -37,6 +37,16 @@ const dataFields = [
 const euro = (value: number) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
 const number = (value: number | null, suffix: string) => value == null ? "Niet opgegeven" : `${new Intl.NumberFormat("nl-NL", { maximumFractionDigits: 2 }).format(value)} ${suffix}`;
 const perPortion = (value: number | null, weightGrams: number | null) => value == null || weightGrams == null ? null : value * weightGrams / 100;
+const safeExternalUrl = (value: string | null | undefined) => {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+};
+
 const hasReliableCheckDate = (value: string | null) => {
   if (!value) return false;
   const timestamp = new Date(value).getTime();
@@ -107,7 +117,7 @@ export default function MealDetailPage() {
         {meal && (
           <section className="meal-detail">
             <div className="meal-detail-main">
-              <div className="meal-detail-image">{meal.image_url ? <img src={meal.image_url} alt={meal.name} loading="lazy" decoding="async" /> : <span>Maaltijd</span>}</div>
+              <div className="meal-detail-image">{safeExternalUrl(meal.image_url) ? <img src={safeExternalUrl(meal.image_url)!} alt={meal.name} loading="lazy" decoding="async" /> : <span>Afbeelding niet beschikbaar</span>}</div>
               <div className="product-tags">
                 {meal.meal_type && <span className="tag">{meal.meal_type}</span>}
                 {meal.preparation_method && <span className="tag muted-tag">{meal.preparation_method}</span>}
@@ -116,7 +126,7 @@ export default function MealDetailPage() {
               <p className="vendor-name">{vendor?.name ?? "Aanbieder onbekend"}</p>
               <div className="detail-price">{meal.price == null ? "Prijs onbekend" : euro(meal.price)}{meal.weight_grams != null && <span>{meal.weight_grams} gram</span>}</div>
               {meal.dietary_labels?.length > 0 && <div className="detail-labels">{meal.dietary_labels.map(label => <span className="tag" key={label}>{label}</span>)}</div>}
-              <a className="detail-cta" href={meal.product_url} target="_blank" rel="noreferrer">Bekijk bij aanbieder ↗</a>
+              {safeExternalUrl(meal.product_url) ? <a className="detail-cta" href={safeExternalUrl(meal.product_url)!} target="_blank" rel="noopener noreferrer">Bekijk bij aanbieder ↗</a> : <p className="detail-muted">De productlink van de aanbieder is niet beschikbaar.</p>}
               <p className="delivery-note">Beschikbaarheid: {meal.availability === "available" ? "Beschikbaar volgens de laatst bekende informatie" : meal.availability === "unavailable" ? "Momenteel niet beschikbaar volgens de laatst bekende informatie" : "Nog niet gecontroleerd"}</p>
               {vendor?.minimum_order_quantity != null && <p className="delivery-note">Minimale bestelling bij deze aanbieder: {vendor.minimum_order_quantity} maaltijden</p>}
               {vendor?.minimum_order_value != null && <p className="delivery-note">Minimale bestelwaarde bij deze aanbieder: {euro(vendor.minimum_order_value)}</p>}
