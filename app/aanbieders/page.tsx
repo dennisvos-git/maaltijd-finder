@@ -14,6 +14,21 @@ type Vendor = {
   last_checked_at: string | null;
 };
 
+const safeExternalUrl = (value: string | null | undefined) => {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+};
+const hasReliableCheckDate = (value: string | null) => {
+  if (!value) return false;
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp) && timestamp <= Date.now();
+};
+
 const euro = (value: number) =>
   new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
 
@@ -87,8 +102,8 @@ export default function VendorsPage() {
                       {vendor.minimum_order_quantity != null && <span>Minimale bestelling: {vendor.minimum_order_quantity} maaltijden</span>}
                       {vendor.minimum_order_value != null && <span>Minimale orderwaarde: {euro(vendor.minimum_order_value)}</span>}
                     </div>
-                    {vendor.last_checked_at && <p className="checked-note">Gecontroleerd: {new Date(vendor.last_checked_at).toLocaleDateString("nl-NL")}</p>}
-                    <div className="vendor-actions"><Link className="product-link" href={`/?aanbieder=${encodeURIComponent(vendor.name)}`}>Bekijk maaltijden van deze aanbieder →</Link>{vendor.website_url && <a className="product-link" href={vendor.website_url} target="_blank" rel="noreferrer">Naar aanbieder ↗</a>}</div>
+                    {!hasReliableCheckDate(vendor.last_checked_at) ? <p className="checked-note">Controledatum ontbreekt of moet worden nagekeken</p> : <p className="checked-note">Gecontroleerd: {new Date(vendor.last_checked_at as string).toLocaleDateString("nl-NL")}</p>}
+                    <div className="vendor-actions"><Link className="product-link" href={`/?aanbieder=${encodeURIComponent(vendor.name)}`}>Bekijk maaltijden van deze aanbieder →</Link>{safeExternalUrl(vendor.website_url) && <a className="product-link" href={safeExternalUrl(vendor.website_url)!} target="_blank" rel="noopener noreferrer">Naar aanbieder ↗</a>}</div>
                   </div>
                 </article>
               ))}
