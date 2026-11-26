@@ -122,3 +122,8 @@ Ook de aanbiederslijst op de importpagina en de controles op bestaande productli
 ## Mobiele weergave van catalogus en beheer
 
 De homepage gebruikt geen vaste inline-kolombreedtes meer voor de filterkolom. Op schermen tot 600 px stapelen filters en resultaten onder elkaar, zodat de filters boven de resultaten staan en de productkaarten de beschikbare breedte benutten. De beheerfilters worden op smalle schermen één kolom; de dashboardtellers gebruiken twee compacte kolommen.
+
+
+## Dashboard handmatig vernieuwen
+
+Het kwaliteitsdashboard laadt de actuele zichtbare product- en aanbiedersgegevens bij het openen. Met **Vernieuw gegevens** kan een beheerder de query's opnieuw uitvoeren zonder de pagina te herladen. De datum en tijd van de laatste laadronde worden getoond. Dit vernieuwt alleen de gegevens uit Supabase; het bezoekt geen aanbiederswebsites en start geen automatische scan.

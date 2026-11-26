@@ -81,10 +81,15 @@ export default function AdminOverviewPage() {
   const [view, setView] = useState("all");
   const [vendorFilter, setVendorFilter] = useState("all");
   const [sort, setSort] = useState("name");
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [lastLoadedAt, setLastLoadedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
+      setLoading(true);
+      setError("");
+      setVendorError("");
       const db = supabase;
       if (!db) { setLoading(false); return; }
       const [productResult, vendorResult] = await Promise.all([
@@ -115,10 +120,11 @@ export default function AdminOverviewPage() {
       else setVendors((vendorResult.data ?? []) as Vendor[]);
       setError(errors.length && productResult.error ? errors[0] : "");
       setLoading(false);
+      setLastLoadedAt(new Date());
     }
     void load();
     return () => { cancelled = true; };
-  }, []);
+  }, [refreshKey]);
 
   const incomplete = products.filter(p => fields.some(([key]) => isMissing(p[key])));
   const stale = products.filter(p => old(p.last_checked_at));
@@ -181,7 +187,7 @@ export default function AdminOverviewPage() {
         <article className="detail-panel"><span>Hoge controleprioriteit</span><strong>{loading ? "…" : highPriority.length}</strong></article>
       </section>
       <section className="catalog">
-        <div className="catalog-heading"><div><div className="eyebrow">Productkwaliteit</div><h2>Aandacht nodig</h2></div></div>
+        <div className="catalog-heading"><div><div className="eyebrow">Productkwaliteit</div><h2>Aandacht nodig</h2><p className="detail-muted" aria-live="polite">{lastLoadedAt ? `Laatst bijgewerkt: ${lastLoadedAt.toLocaleString("nl-NL")}` : "Gegevens nog niet bijgewerkt"}</p></div><button className="admin-secondary" type="button" onClick={() => setRefreshKey(key => key + 1)} disabled={loading || !isSupabaseConfigured}>{loading ? "Bezig met vernieuwen…" : "Vernieuw gegevens"}</button></div>
         <div className="admin-controls">
           <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Zoek maaltijd of aanbieder…" aria-label="Zoek maaltijd of aanbieder" />
           <select value={view} onChange={e => setView(e.target.value)} aria-label="Filter productgegevens">
