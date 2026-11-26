@@ -51,7 +51,7 @@ const safeExternalUrl = (value: string | null | undefined) => {
 const euro = (value: number | null) => value == null ? "Onbekend" : new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
 const csvCell = (value: unknown) => {
   const text = String(value ?? "");
-  const safe = /^[\\t\\r ]*[=+@-]/.test(text) ? `\'${text}` : text;
+  const safe = /^[=+@-]/.test(text) ? "'" + text : text;
   return `"${safe.replace(/"/g, '""')}"`;
 };
 
