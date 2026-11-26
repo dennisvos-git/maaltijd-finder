@@ -43,6 +43,7 @@ function validateRows(rows: unknown[], vendors: Vendor[]) {
       catch { errors.push(`Regel ${n}: ${key} is geen geldige http(s)-link.`); }
     }
     if (row.last_checked_at !== undefined && row.last_checked_at !== null && row.last_checked_at !== "" && (typeof row.last_checked_at !== "string" || !Number.isFinite(Date.parse(row.last_checked_at)))) errors.push(`Regel ${n}: last_checked_at moet leeg zijn of een geldige datum bevatten.`);
+    if (typeof row.last_checked_at === "string" && Number.isFinite(Date.parse(row.last_checked_at)) && Date.parse(row.last_checked_at) > Date.now() + 5 * 60 * 1000) warnings.push(`Regel ${n}: last_checked_at ligt in de toekomst; controleer de datum en tijdzone.`);
     for (const [key, [min, max]] of Object.entries(numericRules)) {
       const v = row[key];
       if (v !== undefined && v !== null && v !== "" && (typeof v !== "number" || !Number.isFinite(v) || v < min || v > max)) {
