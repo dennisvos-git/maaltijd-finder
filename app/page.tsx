@@ -175,7 +175,36 @@ export default function Home() {
             : hasReliableCheckDate(product.last_checked_at) && new Date(product.last_checked_at as string).getTime() >= Date.now() - 30 * 24 * 60 * 60 * 1000));
     });
 
-    return filtered.sort((a, b) => {
+    const activeFilterCount = [
+    search.trim() !== "",
+    mealType !== "all",
+    preparation !== "all",
+    dietaryLabel !== "all",
+    availability !== "all",
+    dataStatus !== "all",
+    minPrice !== "",
+    maxPrice !== "",
+    minWeight !== "",
+    maxWeight !== "",
+    freshness !== "all",
+  ].filter(Boolean).length;
+
+  function clearFilters() {
+    setSearch("");
+    setMealType("all");
+    setPreparation("all");
+    setDietaryLabel("all");
+    setAvailability("all");
+    setDataStatus("all");
+    setMinPrice("");
+    setMaxPrice("");
+    setMinWeight("");
+    setMaxWeight("");
+    setFreshness("all");
+    setSort("name");
+  }
+
+  return filtered.sort((a, b) => {
       if (sort === "price") return (a.price ?? Number.MAX_VALUE) - (b.price ?? Number.MAX_VALUE);
       if (sort === "price-per-kg") {
         const aValue = a.price != null && a.weight_grams ? a.price / a.weight_grams : Number.MAX_VALUE;
@@ -227,7 +256,10 @@ export default function Home() {
               <div className="eyebrow">Het aanbod</div>
               <h2>Maaltijden vergelijken</h2>
             </div>
-            <span className="result-count" aria-live="polite" aria-atomic="true">{loading ? "Laden…" : `${visibleProducts.length} maaltijden`}</span>
+            <div className="catalog-heading-actions">
+              <span className="result-count" aria-live="polite" aria-atomic="true">{loading ? "Laden…" : `${visibleProducts.length} van ${products.length} maaltijden`}</span>
+              {activeFilterCount > 0 && <button type="button" className="filters-clear-inline" onClick={clearFilters}>Wis {activeFilterCount} filters</button>}
+            </div>
           </div>
 
           {!loading && products.length > 0 && <div className="catalog-data-summary"><p>{incompleteCount} van {products.length} maaltijden missen nog één of meer gegevens. Ontbrekende velden staan per maaltijd vermeld.</p><p>De volledigheidsscore telt 7 velden: prijs, gewicht, energie, eiwitten, koolhydraten, vetten en ingrediënten. Het is geen beoordeling van voedingskwaliteit.</p></div>}
@@ -316,20 +348,7 @@ export default function Home() {
             <button
               type="button"
               className="filters-reset"
-              onClick={() => {
-                setSearch("");
-                setMealType("all");
-                setPreparation("all");
-                setDietaryLabel("all");
-                setAvailability("all");
-                setDataStatus("all");
-                setMinPrice("");
-                setMaxPrice("");
-                setMinWeight("");
-                setMaxWeight("");
-                setFreshness("all");
-                setSort("name");
-              }}
+              onClick={clearFilters}
             >
               Wis filters en sortering
             </button>
@@ -359,7 +378,7 @@ export default function Home() {
           )}
 
           {isSupabaseConfigured && !loading && !error && products.length > 0 && visibleProducts.length === 0 && (
-            <div className="empty-state"><h3>Geen maaltijden gevonden</h3><p>Pas je zoekopdracht of filters aan.</p></div>
+            <div className="empty-state"><h3>Geen maaltijden gevonden</h3><p>Pas je zoekopdracht of filters aan, of begin opnieuw.</p><button type="button" className="filters-clear-inline" onClick={clearFilters}>Wis alle filters</button></div>
           )}
 
           {visibleProducts.length > 0 && (
