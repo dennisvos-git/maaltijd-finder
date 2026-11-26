@@ -48,24 +48,25 @@ export default function AdminImagesPage() {
   useEffect(() => {
     let active = true;
     async function load() {
-      if (!supabase) {
+      const db = supabase;
+      if (!db) {
         if (active) { setError("De databaseverbinding is niet ingesteld."); setLoading(false); }
         return;
       }
-      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: sessionData } = await db.auth.getSession();
       const userId = sessionData.session?.user.id;
       if (!userId) {
         if (active) { setError("Log eerst in via Beheerlogin / import."); setLoading(false); }
         return;
       }
-      const { data: membership, error: membershipError } = await supabase
+      const { data: membership, error: membershipError } = await db
         .from("admin_users").select("user_id").eq("user_id", userId).maybeSingle();
       if (membershipError || !membership) {
         if (active) { setError("Dit account heeft geen beheerrechten."); setLoading(false); }
         return;
       }
       const { data, error: queryError } = await fetchAllRows(
-        (from, to) => supabase
+        (from, to) => db
           .from("products")
           .select("id,name,product_url,image_url,vendors!inner(name,verification_status,country_code,is_active)")
           .eq("is_active", true)
