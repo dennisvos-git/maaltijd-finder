@@ -349,9 +349,9 @@ export default function Home() {
                 return (
                   <article className="product-card" key={product.id}>
                     <div className="product-image">
-                      {product.image_url
-                        ? <img src={product.image_url} alt={product.name} loading="lazy" decoding="async" />
-                        : <span>Maaltijd</span>}
+                      {safeExternalUrl(product.image_url)
+                        ? <img src={safeExternalUrl(product.image_url)!} alt={product.name} loading="lazy" decoding="async" />
+                        : <span>Afbeelding niet beschikbaar</span>}
                     </div>
                     <div className="product-content">
                       <div className="product-tags">
