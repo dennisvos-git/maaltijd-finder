@@ -109,7 +109,7 @@ export default function AdminOverviewPage() {
   function exportFilteredCsv() {
     const headers = ["Product-ID", "Maaltijd", "Aanbieder", "Prijs (EUR)", "Gewicht (gram)", "Energie (kcal/100g)", "Eiwitten (g/100g)", "Koolhydraten (g/100g)", "Vetten (g/100g)", "Ingrediënten", "Laatste controle", "Productlink", "Afbeelding"];
     const rows = filtered.map(p => [p.id, p.name, vendorName(p), p.price, p.weight_grams, p.kcal_per_100g, p.protein_per_100g, p.carbohydrates_per_100g, p.fat_per_100g, p.ingredients, p.last_checked_at, p.product_url, p.image_url]);
-    const csv = "\\uFEFF" + [headers, ...rows].map(row => row.map(csvCell).join(";")).join("\\r\\n");
+    const csv = "\uFEFF" + [headers, ...rows].map(row => row.map(csvCell).join(";")).join("\r\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;
