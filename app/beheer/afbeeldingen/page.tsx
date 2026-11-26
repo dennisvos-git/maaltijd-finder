@@ -15,7 +15,17 @@ type Product = {
 const vendorName = (product: Product) =>
   Array.isArray(product.vendors) ? product.vendors[0]?.name ?? "Onbekende aanbieder" : product.vendors?.name ?? "Onbekende aanbieder";
 
-const safeExternalUrl = (value: string | null | undefined) => {\n  if (!value) return null;\n  try {\n    const url = new URL(value.trim());\n    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;\n  } catch {\n    return null;\n  }\n};\n\nconst safeImageUrl = (value: string) => {
+const safeExternalUrl = (value: string | null | undefined) => {
+  if (!value) return null;
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+};
+
+const safeImageUrl = (value: string) => {
   try {
     const url = new URL(value.trim());
     return url.protocol === "https:" && Boolean(url.hostname) ? url.toString() : null;
