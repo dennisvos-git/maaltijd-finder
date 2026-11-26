@@ -44,6 +44,12 @@ const missingData = (product: Product) => dataFields.filter(([field]) => {
   return value === null || value === undefined || (typeof value === "string" && value.trim() === "");
 }).map(([, label]) => label);
 
+const hasReliableCheckDate = (value: string | null) => {
+  if (!value) return false;
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp) && timestamp <= Date.now();
+};
+
 const euro = (value: number) =>
   new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value);
 
@@ -132,8 +138,8 @@ export default function Home() {
         && (minWeight === "" || (product.weight_grams != null && product.weight_grams >= Number(minWeight)))
         && (maxWeight === "" || (product.weight_grams != null && product.weight_grams <= Number(maxWeight)))
         && (freshness === "all" || (freshness === "stale"
-          ? !product.last_checked_at || new Date(product.last_checked_at).getTime() < Date.now() - 30 * 24 * 60 * 60 * 1000
-          : Boolean(product.last_checked_at) && new Date(product.last_checked_at!).getTime() >= Date.now() - 30 * 24 * 60 * 60 * 1000));
+          ? !hasReliableCheckDate(product.last_checked_at) || new Date(product.last_checked_at as string).getTime() < Date.now() - 30 * 24 * 60 * 60 * 1000
+          : hasReliableCheckDate(product.last_checked_at) && new Date(product.last_checked_at as string).getTime() >= Date.now() - 30 * 24 * 60 * 60 * 1000));
     });
 
     return filtered.sort((a, b) => {
@@ -363,9 +369,9 @@ export default function Home() {
                       {vendor?.minimum_order_quantity != null && (
                         <p className="delivery-note">Minimale bestelling: {vendor.minimum_order_quantity} maaltijden</p>
                       )}
-                      {product.last_checked_at && (
-                        <p className="checked-note">Gecontroleerd: {new Date(product.last_checked_at).toLocaleDateString("nl-NL")}</p>
-                      )}
+                      {!hasReliableCheckDate(product.last_checked_at)
+                        ? <p className="checked-note">Controledatum ontbreekt of moet worden nagekeken</p>
+                        : <p className="checked-note">Gecontroleerd: {new Date(product.last_checked_at as string).toLocaleDateString("nl-NL")}</p>}
                     </div>
                   </article>
                 );
