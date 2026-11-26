@@ -81,7 +81,7 @@ export default function MealDetailPage() {
   const vendor = meal ? (Array.isArray(meal.vendors) ? meal.vendors[0] ?? null : meal.vendors) : null;
   const missingFields = meal ? dataFields.filter(([field]) => {
     const value = meal[field];
-    return value === null || value === undefined || value === "";
+    return value === null || value === undefined || (typeof value === "string" && value.trim() === "");
   }).map(([, label]) => label) : [];
   const completeness = 7 - missingFields.length;
 
@@ -102,7 +102,7 @@ export default function MealDetailPage() {
         {meal && (
           <section className="meal-detail">
             <div className="meal-detail-main">
-              <div className="meal-detail-image">{meal.image_url ? <img src={meal.image_url} alt={meal.name} /> : <span>Maaltijd</span>}</div>
+              <div className="meal-detail-image">{meal.image_url ? <img src={meal.image_url} alt={meal.name} loading="lazy" decoding="async" /> : <span>Maaltijd</span>}</div>
               <div className="product-tags">
                 {meal.meal_type && <span className="tag">{meal.meal_type}</span>}
                 {meal.preparation_method && <span className="tag muted-tag">{meal.preparation_method}</span>}
