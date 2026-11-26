@@ -218,15 +218,3 @@ a { text-underline-offset: 3px; }
 .admin-image-list .detail-cta { justify-self: start; border: 0; cursor: pointer; }
 .admin-image-list .detail-cta:disabled { opacity: .55; cursor: not-allowed; }
 @media (max-width: 760px) { .admin-image-list { grid-template-columns: 1fr; } }
-
-
-/* Prominent, accessible homepage search */
-.hero-search-wrap { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; max-width: 720px; margin-top: 22px; }
-.hero-search { display: block; flex: 1 1 360px; }
-.hero-search input { width: 100%; min-width: 0; height: 54px; padding: 0 18px; border: 1px solid #d5e2da; border-radius: 12px; background: white; color: var(--ink); font: inherit; font-size: 15px; box-shadow: 0 5px 18px rgba(20, 60, 40, .06); }
-.hero-search input:focus-visible { outline: 3px solid #0b8b5a; outline-offset: 2px; border-color: var(--green); }
-.hero-search-clear { min-height: 42px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 9px; background: white; color: var(--green-dark); font: inherit; font-size: 12px; font-weight: 700; }
-.hero-search-clear:hover { background: var(--green-soft); }
-.hero-note { margin: 10px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
-.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-@media (max-width: 600px) { .hero-search-wrap { align-items: stretch; } .hero-search { flex-basis: 100%; } .hero-search input { height: 50px; } .hero-search-clear { justify-self: start; } }
