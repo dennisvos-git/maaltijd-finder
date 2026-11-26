@@ -24,6 +24,7 @@ const productColumns = [
 
 function validateRows(rows: unknown[], vendors: Vendor[]) {
   const errors: string[] = [];
+  const warnings: string[] = [];
   const seen = new Set<string>();
   rows.forEach((value, index) => {
     const n = index + 1;
@@ -36,10 +37,12 @@ function validateRows(rows: unknown[], vendors: Vendor[]) {
     if (!vendor || vendor.country_code !== "NL" || vendor.verification_status !== "verified" || !vendor.is_active) {
       errors.push(`Regel ${n}: aanbieder bestaat niet of is niet actief, geverifieerd en Nederlands.`);
     }
-    for (const key of ["product_url", "source_reference"]) {
-      try { const u = new URL(String(row[key])); if (!["http:", "https:"].includes(u.protocol)) throw new Error(); }
+    for (const key of ["product_url", "source_reference", "image_url"]) {
+      if (key === "image_url" && (row[key] == null || row[key] === "")) continue;
+      try { const u = new URL(String(row[key])); if (!["http:", "https:"].includes(u.protocol) || !u.hostname) throw new Error(); }
       catch { errors.push(`Regel ${n}: ${key} is geen geldige http(s)-link.`); }
     }
+    if (row.last_checked_at !== undefined && row.last_checked_at !== null && row.last_checked_at !== "" && (typeof row.last_checked_at !== "string" || !Number.isFinite(Date.parse(row.last_checked_at)))) errors.push(`Regel ${n}: last_checked_at moet leeg zijn of een geldige datum bevatten.`);
     for (const [key, [min, max]] of Object.entries(numericRules)) {
       const v = row[key];
       if (v !== undefined && v !== null && v !== "" && (typeof v !== "number" || !Number.isFinite(v) || v < min || v > max)) {
@@ -48,15 +51,24 @@ function validateRows(rows: unknown[], vendors: Vendor[]) {
     }
     if (row.availability !== undefined && !["available", "unavailable", "unknown"].includes(String(row.availability))) errors.push(`Regel ${n}: availability is ongeldig.`);
     if (row.dietary_labels !== undefined && (!Array.isArray(row.dietary_labels) || row.dietary_labels.some(v => typeof v !== "string"))) errors.push(`Regel ${n}: dietary_labels moet een lijst met tekst zijn.`);
+    if (row.price === 0) warnings.push(`Regel ${n}: prijs is € 0; controleer of dit geen ontbrekende of verkeerd overgenomen prijs is.`);
+    if (typeof row.weight_grams === "number" && row.weight_grams > 3000) warnings.push(`Regel ${n}: gewicht is hoger dan 3 kg; controleer de verpakkingseenheid.`);
     const macros = [row.protein_per_100g, row.carbohydrates_per_100g, row.fat_per_100g];
     if (macros.every(v => typeof v === "number" && Number.isFinite(v)) && (macros as number[]).reduce((sum, v) => sum + v, 0) > 100.5) {
       errors.push(`Regel ${n}: eiwit, koolhydraten en vet samen zijn meer dan 100 gram per 100 gram.`);
+    }
+    if (macros.every(v => typeof v === "number" && Number.isFinite(v)) && typeof row.kcal_per_100g === "number" && Number.isFinite(row.kcal_per_100g)) {
+      const estimated = 4 * Number(macros[0]) + 4 * Number(macros[1]) + 9 * Number(macros[2]);
+      const tolerance = Math.max(50, Number(row.kcal_per_100g) * 0.35);
+      if (Math.abs(estimated - Number(row.kcal_per_100g)) > tolerance) warnings.push(`Regel ${n}: kcal wijkt opvallend af van de berekening uit eiwit, koolhydraten en vet. Controleer de bron.`);
+    } else if (macros.some(v => v !== null && v !== undefined && v !== "")) {
+      warnings.push(`Regel ${n}: voedingsprofiel is gedeeltelijk ingevuld; onbekende waarden mogen leeg blijven.`);
     }
     const key = `${String(row.vendor_id)}|${String(row.product_url)}`.toLowerCase();
     if (seen.has(key)) errors.push(`Regel ${n}: dubbele aanbieder/productlink in dit bestand.`);
     seen.add(key);
   });
-  return errors;
+  return { errors, warnings };
 }
 
 export default function AdminImportPage() {
@@ -123,18 +135,9 @@ export default function AdminImportPage() {
       const parsed: unknown = JSON.parse(json);
       if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("Plak een JSON-lijst met minimaal één product.");
       const validation = validateRows(parsed, vendors);
-      if (validation.length) { setErrors(validation); setBusy(false); return; }
+      if (validation.errors.length) { setErrors(validation.errors); setBusy(false); return; }
       const rows = parsed as ImportRow[];
-      const nutritionWarnings = rows.flatMap((row, index) => {
-        const protein = row.protein_per_100g, carbs = row.carbohydrates_per_100g, fat = row.fat_per_100g, kcal = row.kcal_per_100g;
-        if ([protein, carbs, fat, kcal].every(v => typeof v === "number" && Number.isFinite(v))) {
-          const estimated = 4 * Number(protein) + 4 * Number(carbs) + 9 * Number(fat);
-          const tolerance = Math.max(50, Number(kcal) * 0.35);
-          return Math.abs(estimated - Number(kcal)) > tolerance ? [`Regel ${index + 1}: kcal wijkt opvallend af van de berekening uit eiwit, koolhydraten en vet. Controleer de bron.`] : [];
-        }
-        return [];
-      });
-      setWarnings(nutritionWarnings);
+      setWarnings(validation.warnings);
       const vendorIds = [...new Set(rows.map(r => r.vendor_id))];
       const { data: existing, error: existingError } = await supabase.from("products").select("vendor_id,product_url").in("vendor_id", vendorIds);
       if (existingError) throw new Error("Bestaande producten konden niet worden gecontroleerd.");
