@@ -168,7 +168,7 @@ export default function Home() {
       <header className="topbar">
         <div className="topbar-inner">
           <Link className="brand" href="/">Maaltijd <span>Finder</span></Link>
-          <nav className="nav-note site-nav"><Link href="/aanbieders">Aanbieders</Link><Link href="/beheer">Controle-overzicht</Link><span>Eerlijk vergelijken. Slim kiezen.</span></nav>
+          <nav className="nav-note site-nav"><Link href="/aanbieders">Aanbieders</Link><Link href="/uitleg">Zo werkt het</Link><Link href="/beheer">Controle-overzicht</Link><span>Eerlijk vergelijken. Slim kiezen.</span></nav>
         </div>
       </header>
 
@@ -357,7 +357,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer>Maaltijd Finder · Productinformatie wordt gecontroleerd en voorzien van een controledatum.</footer>
+      <footer>Maaltijd Finder · Productinformatie wordt gecontroleerd en voorzien van een controledatum. <Link href="/uitleg">Zo werkt vergelijken</Link></footer>
     </>
   );
 }
