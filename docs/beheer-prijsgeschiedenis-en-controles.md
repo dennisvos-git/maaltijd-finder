@@ -69,3 +69,6 @@ Deze technische vindbaarheidsverbeteringen zijn geen garantie op hogere posities
 - De resultaatmelding van de catalogus wordt als live status aan hulptechnologie doorgegeven.
 - Productafbeeldingen in de catalogus en op detailpagina's worden waar mogelijk uitgesteld geladen.
 - De filterreset zet zoekterm, filters en sortering terug naar de standaardinstellingen.
+
+## Onderscheid in controledatums
+Het beheerdashboard telt producten zonder controledatum apart van producten waarvan de laatste controledatum ouder is dan 30 dagen. De tegel 'Ouder dan 30 dagen' telt dus geen ontbrekende datums mee; 'Nooit gecontroleerd' doet dat afzonderlijk. Dezelfde whitespace-controle voor ontbrekende tekstvelden wordt gebruikt bij de volledigheidscontrole in het dashboard. Een datumstatus is uitsluitend een administratief signaal en bewijst niet dat de aanbiederwebsite is gecontroleerd.
