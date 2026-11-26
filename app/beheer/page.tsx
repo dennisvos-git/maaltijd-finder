@@ -55,6 +55,20 @@ const csvCell = (value: unknown) => {
   return `"${safe.replace(/"/g, '""')}"`;
 };
 
+type CheckPriority = { rank: number; label: string; reason: string };
+const checkPriority = (p: Product): CheckPriority => {
+  const reasons: string[] = [];
+  if (!safeExternalUrl(p.product_url)) reasons.push("productlink ontbreekt of is ongeldig");
+  if (isMissing(p.price)) reasons.push("prijs ontbreekt");
+  if (reasons.length) return { rank: 0, label: "Hoog", reason: reasons.join("; ") };
+  if (!validDate(p.last_checked_at)) reasons.push("controledatum ontbreekt of is ongeldig");
+  else if (old(p.last_checked_at)) reasons.push("langer dan 30 dagen niet gecontroleerd");
+  if (isMissing(p.image_url)) reasons.push("afbeelding ontbreekt");
+  if (fields.some(([key]) => isMissing(p[key]))) reasons.push("productgegevens ontbreken");
+  if (reasons.length) return { rank: 1, label: "Midden", reason: reasons.join("; ") };
+  return { rank: 2, label: "Laag", reason: "basisgegevens en controledatum aanwezig" };
+};
+
 export default function AdminOverviewPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -105,6 +119,11 @@ export default function AdminOverviewPage() {
     const matchesVendor = vendorFilter === "all" || productVendor === vendorFilter;
     return matches && matchesVendor && (view === "all" || (view === "missing" && missing) || (view === "stale" && !!p.last_checked_at && old(p.last_checked_at)) || (view === "never" && !p.last_checked_at) || (view === "invalid" && Boolean(p.last_checked_at) && !validDate(p.last_checked_at)) || (view === "no-image" && isMissing(p.image_url)) || (view === "bad-link" && !safeExternalUrl(p.product_url)));
   }).sort((a, b) => {
+    if (sort === "priority") {
+      const priorityDifference = checkPriority(a).rank - checkPriority(b).rank;
+      if (priorityDifference) return priorityDifference;
+      return (validDate(a.last_checked_at) ? new Date(a.last_checked_at as string).getTime() : 0) - (validDate(b.last_checked_at) ? new Date(b.last_checked_at as string).getTime() : 0);
+    }
     if (sort === "oldest") return (validDate(a.last_checked_at) ? new Date(a.last_checked_at as string).getTime() : 0) - (validDate(b.last_checked_at) ? new Date(b.last_checked_at as string).getTime() : 0);
     if (sort === "price-low") return (a.price ?? Number.POSITIVE_INFINITY) - (b.price ?? Number.POSITIVE_INFINITY);
     if (sort === "price-high") return (b.price ?? Number.NEGATIVE_INFINITY) - (a.price ?? Number.NEGATIVE_INFINITY);
@@ -158,7 +177,7 @@ export default function AdminOverviewPage() {
             {[...new Set(products.map(vendorName))].sort((a, b) => a.localeCompare(b, "nl-NL")).map(name => <option key={name} value={name}>{name}</option>)}
           </select>
           <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Sorteer producten">
-            <option value="name">Sorteer: naam</option><option value="oldest">Sorteer: oudste controle eerst</option><option value="price-low">Sorteer: laagste prijs</option><option value="price-high">Sorteer: hoogste prijs</option>
+            <option value="priority">Sorteer: hoogste controleprioriteit</option><option value="name">Sorteer: naam</option><option value="oldest">Sorteer: oudste controle eerst</option><option value="price-low">Sorteer: laagste prijs</option><option value="price-high">Sorteer: hoogste prijs</option>
           </select>
         </div>
         <div className="catalog-heading"><p className="detail-muted" aria-live="polite">{loading ? "Resultaten laden…" : `${filtered.length} producten in deze selectie`}</p><button className="admin-secondary" type="button" onClick={exportFilteredCsv} disabled={loading || filtered.length === 0}>Exporteer selectie als CSV</button></div>
@@ -167,7 +186,7 @@ export default function AdminOverviewPage() {
         {error && <div className="empty-state"><p>{error}</p></div>}
         {!loading && !error && filtered.length === 0 && <div className="empty-state"><p>Geen producten gevonden voor deze selectie.</p></div>}
         {!loading && !error && filtered.length > 0 && <div className="admin-table-wrap"><table className="admin-table">
-          <thead><tr><th>Maaltijd</th><th>Aanbieder</th><th>Prijs</th><th>Ontbreekt</th><th>Laatste controle</th><th>Bron</th></tr></thead>
+          <thead><tr><th>Prioriteit</th><th>Maaltijd</th><th>Aanbieder</th><th>Prijs</th><th>Ontbreekt</th><th>Laatste controle</th><th>Bron</th></tr></thead>
           <tbody>{filtered.map(p => {
             const missing = fields.filter(([key]) => isMissing(p[key])).map(([, label]) => label);
             return <tr key={p.id}>
