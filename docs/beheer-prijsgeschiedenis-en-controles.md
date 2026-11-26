@@ -3,7 +3,7 @@
 ## Wat werkt er nu
 - `/beheer`: kwaliteitsdashboard met aantallen, ontbrekende productvelden, controledatums en aanbiederstatus.
 - Dashboardfilters: zoeken op maaltijd/aanbieder, filteren op aanbieder, ontbrekende gegevens, ouder dan 30 dagen, nooit gecontroleerd, ongeldige controledatum, ontbrekende afbeelding of ongeldige productlink.
-- Dashboardsortering: naam, oudste controledatum, laagste prijs en hoogste prijs.
+- Dashboardsortering: hoogste controleprioriteit, naam, oudste controledatum, laagste prijs en hoogste prijs. De prioriteit is afgeleid: hoog bij ontbrekende/ongeldige productlink of ontbrekende prijs; midden bij verouderde/ontbrekende controledatum, ontbrekende afbeelding of overige ontbrekende productvelden; laag als deze basiscontroles in orde zijn. De prioriteit wijzigt geen productgegevens.
 - CSV-export van de huidige dashboardselectie, inclusief productvelden, controledatum en bronlinks.
 - `/beheer/import`: beveiligde Supabase Auth-login, wachtwoordherstel en JSON-import voor accounts die in `public.admin_users` staan.
 - Catalogusfilters: maaltijdsoort, bereiding, dieetkenmerk, beschikbaarheid, volledigheid, prijs, gewicht, controledatum en sortering.
