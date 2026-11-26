@@ -100,3 +100,8 @@ Bij een import met waarschuwingen moet de beheerder in de preview expliciet aanv
 ## Veilige externe links en toekomstige controledatums
 
 Publieke product-, afbeelding- en aanbiederslinks worden alleen als externe link of afbeelding gebruikt wanneer de URL een absolute `http`- of `https`-URL is. Bij een ongeldige productlink blijft de productdetailpagina beschikbaar, maar wordt geen uitgaande knop getoond. Het beheer-overzicht behandelt ook toekomstige controledatums als ongeldig; zo sluiten de tellingen en filters aan op de openbare catalogus. Dit controleert de URL-vorm, niet of de externe website bereikbaar is of de inhoud klopt.
+
+
+## Bestaande maaltijden van afbeeldingen voorzien
+
+De beveiligde beheerpagina `/beheer/afbeeldingen` toont actieve producten van actieve, geverifieerde Nederlandse aanbieders waarvoor `image_url` nog leeg is. Een beheerder kan per bestaand product een HTTPS-afbeeldingslink invoeren, vooraf bekijken en afzonderlijk opslaan. De pagina controleert de ingelogde Supabase Auth-gebruiker tegen `public.admin_users`; de bestaande update-policy voor beheerders beschermt de databasewijziging. Er worden geen nieuwe producten aangemaakt en er worden geen afbeeldingen automatisch geraden of opgehaald. Gebruik bij voorkeur de exacte productafbeelding van de aanbieder en controleer de match handmatig. Het gaat om een afbeeldings-URL, niet om het uploaden van een lokaal bestand.
