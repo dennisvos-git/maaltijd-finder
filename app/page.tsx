@@ -200,7 +200,7 @@ export default function Home() {
       }
       return a.name.localeCompare(b.name, "nl");
     });
-  }, [products, search, mealType, preparation, dietaryLabel, availability, dataStatus, minPrice, maxPrice, minWeight, maxWeight, freshness, sort]);
+  }, [products, search, mealType, preparation, dietaryLabel, availability, dataStatus, minPrice, maxPrice, minWeight, maxWeight, freshness, sort, numericFiltersValid]);
 
   const activeFilterCount = [
     search.trim() !== "",
