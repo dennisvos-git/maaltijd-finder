@@ -149,7 +149,8 @@ export default function AdminImportPage() {
 
   async function previewProducts() {
     setBusy(true); setErrors([]); setWarnings([]); setWarningsAcknowledged(false); setMessage(""); setPreviewRows(null);
-    if (!supabase) { setMessage("Supabase is niet ingesteld."); setBusy(false); return; }
+    const db = supabase;
+    if (!db) { setMessage("Supabase is niet ingesteld."); setBusy(false); return; }
     try {
       const parsed: unknown = JSON.parse(json);
       if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("Plak een JSON-lijst met minimaal één product.");
@@ -159,7 +160,7 @@ export default function AdminImportPage() {
       setWarnings(validation.warnings);
       const vendorIds = [...new Set(rows.map(r => r.vendor_id))];
       const { data: existing, error: existingError } = await fetchAllRows(
-        (from, to) => supabase.from("products")
+        (from, to) => db.from("products")
           .select("id,vendor_id,product_url")
           .in("vendor_id", vendorIds)
           .order("id")
@@ -176,11 +177,12 @@ export default function AdminImportPage() {
   }
 
   async function confirmImport() {
-    if (!supabase || !previewRows?.length || (warnings.length > 0 && !warningsAcknowledged)) return;
+    const db = supabase;
+    if (!db || !previewRows?.length || (warnings.length > 0 && !warningsAcknowledged)) return;
     setBusy(true); setErrors([]); setMessage("");
     try {
       const vendorIds = [...new Set(previewRows.map(r => r.vendor_id))];
-      const { data: currentVendors, error: vendorError } = await supabase
+      const { data: currentVendors, error: vendorError } = await db
         .from("vendors")
         .select("id")
         .in("id", vendorIds)
@@ -210,7 +212,7 @@ export default function AdminImportPage() {
       const payload = previewRows.map(row => Object.fromEntries(
         productColumns.filter(k => row[k] !== undefined).map(k => [k, nullableColumns.has(k) && row[k] === "" ? null : row[k]])
       ));
-      const { error } = await supabase.from("products").insert(payload);
+      const { error } = await db.from("products").insert(payload);
       if (error) throw new Error(error.message.includes("row-level security") ? "Database heeft de schrijfactie geblokkeerd. Controleer de beheerrol en SQL-migratie." : "Opslaan is niet gelukt. Controleer de importgegevens en database-instellingen.");
       setMessage(`${payload.length} product(en) succesvol geïmporteerd.`);
       setJson("");
